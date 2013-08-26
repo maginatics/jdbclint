@@ -17,13 +17,15 @@
 package com.maginatics.jdbclint;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.sql.DataSource;
+
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,10 +33,9 @@ import org.junit.rules.ExpectedException;
 
 /** Test JDBC lint checks. */
 // TODO: test close/finalize methods
-// TODO: test DataSource
 public final class JdbcLintTest {
     private static AtomicLong dbNumber = new AtomicLong();
-    private String dbName;
+    private DataSource dataSource;
 
     /** Helper to match arbitrary exceptions in tests. */
     @Rule
@@ -43,8 +44,8 @@ public final class JdbcLintTest {
     /** Create database with a single-column table. */
     @Before
     public void setUp() throws SQLException {
-        dbName = "jdbclint-database-" + dbNumber.addAndGet(1);
-        Connection conn = newConnection();
+        dataSource = getDataSource();
+        Connection conn = dataSource.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(
                     "CREATE TABLE table (column INT)");
@@ -60,7 +61,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testConnectionDoubleClose() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -75,7 +76,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testConnectionMissingCommitOrRollback() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
@@ -90,7 +91,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testConnectionMissingPrepareStatement() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         thrown.expect(SQLException.class);
         thrown.expectMessage("Connection without prepareStatement");
         conn.close();
@@ -98,7 +99,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testPreparedStatementDoubleClose() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -112,7 +113,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testPreparedStatementMissingExecute() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -124,7 +125,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testPreparedStatementMissingExecuteBatch() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -137,7 +138,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testResultSetAllRowsConsumed() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -153,7 +154,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testResultSetDoubleClose() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement("SELECT * FROM table");
         ResultSet rs = stmt.executeQuery();
         rs.next();
@@ -166,7 +167,7 @@ public final class JdbcLintTest {
 
     @Test
     public void testResultSetUnreadColumn() throws SQLException {
-        Connection conn = newConnection();
+        Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO table (column) VALUES (?)");
         stmt.setInt(1, 0);
@@ -181,10 +182,13 @@ public final class JdbcLintTest {
         rs.next();
     }
 
-    private Connection newConnection() throws SQLException {
+    private static DataSource getDataSource() throws SQLException {
         Properties properties = new Properties();
         properties.setProperty(JdbcLint.FAIL_METHOD, "throw_sql_exception");
-        return ConnectionProxy.newInstance(DriverManager.getConnection(
-                "jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1"), properties);
+
+        JdbcDataSource jdbcDataSource = new JdbcDataSource();
+        String dbName = "database-" + dbNumber.addAndGet(1);
+        jdbcDataSource.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1");
+        return DataSourceProxy.newInstance(jdbcDataSource, properties);
     }
 }
