@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -145,7 +146,11 @@ final class ResultSetProxy implements InvocationHandler {
             unreadColumns.remove(columnLabel);
         }
         try {
-            return method.invoke(rs, args);
+            Object returnVal = method.invoke(rs, args);
+            if (name.equals("getBlob")) {
+                returnVal = BlobProxy.newInstance((Blob) returnVal, properties);
+            }
+            return returnVal;
         } catch (InvocationTargetException ite) {
             throw ite.getTargetException();
         }

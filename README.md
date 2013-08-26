@@ -7,9 +7,11 @@ JDBC lint.
 
 Features
 --------
-JDBC lint warns about 12 different conditions, configured via the following
+JDBC lint warns about 14 different conditions, configured via the following
 properties:
 
+* com.maginatics.jdbclint.blob.double\_free
+* com.maginatics.jdbclint.blob.missing\_free
 * com.maginatics.jdbclint.connection.double\_close
 * com.maginatics.jdbclint.connection.missing\_close
 * com.maginatics.jdbclint.connection.missing\_commit\_or\_rollback

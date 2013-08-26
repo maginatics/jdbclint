@@ -58,6 +58,10 @@ public final class JdbcLint {
             "com.maginatics.jdbclint.resultset.missing_close";
     public static final String RESULT_SET_UNREAD_COLUMN =
             "com.maginatics.jdbclint.resultset.unread_column";
+    public static final String BLOB_DOUBLE_FREE =
+            "com.maginatics.jdbclint.blob.double_free";
+    public static final String BLOB_MISSING_FREE =
+            "com.maginatics.jdbclint.blob.missing_free";
 
     private JdbcLint() {
         // intentionally unimplemented

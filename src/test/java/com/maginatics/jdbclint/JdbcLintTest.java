@@ -16,6 +16,7 @@
 
 package com.maginatics.jdbclint;
 
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -180,6 +181,32 @@ public final class JdbcLintTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("ResultSet has unread column: column");
         rs.next();
+    }
+
+    @Test
+    public void testBlobDoubleFree() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(
+                "CREATE TABLE blob_table (column BLOB)");
+        stmt.executeUpdate();
+        stmt.close();
+
+        stmt = conn.prepareStatement(
+                "INSERT INTO blob_table (column) VALUES (?)");
+        stmt.setBytes(1, new byte[1]);
+        stmt.executeUpdate();
+        stmt.close();
+
+        stmt = conn.prepareStatement("SELECT column FROM blob_table");
+        ResultSet rs = stmt.executeQuery();
+        rs.next();
+
+        Blob blob = rs.getBlob("column");
+        blob.free();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Blob already freed");
+        blob.free();
     }
 
     private static DataSource getDataSource() throws SQLException {
