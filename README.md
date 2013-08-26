@@ -10,20 +10,18 @@ Features
 JDBC lint warns about 12 different conditions, configured via the following
 properties:
 
-    com.maginatics.jdbclint.connection.double_close
-    com.maginatics.jdbclint.connection.missing_close
-    com.maginatics.jdbclint.connection.missing_commit_or_rollback
-    com.maginatics.jdbclint.connection.missing_prepare_statement
-
-    com.maginatics.jdbclint.preparedstatement.double_close
-    com.maginatics.jdbclint.preparedstatement.missing_close
-    com.maginatics.jdbclint.preparedstatement.missing_execute
-    com.maginatics.jdbclint.preparedstatement.missing_execute_batch
-
-    com.maginatics.jdbclint.resultset.all_rows_consumed
-    com.maginatics.jdbclint.resultset.double_close
-    com.maginatics.jdbclint.resultset.missing_close
-    com.maginatics.jdbclint.resultset.unread_column
+* com.maginatics.jdbclint.connection.double\_close
+* com.maginatics.jdbclint.connection.missing\_close
+* com.maginatics.jdbclint.connection.missing\_commit\_or\_rollback
+* com.maginatics.jdbclint.connection.missing\_prepare\_statement
+* com.maginatics.jdbclint.preparedstatement.double\_close
+* com.maginatics.jdbclint.preparedstatement.missing\_close
+* com.maginatics.jdbclint.preparedstatement.missing\_execute
+* com.maginatics.jdbclint.preparedstatement.missing\_execute\_batch
+* com.maginatics.jdbclint.resultset.all\_rows\_consumed
+* com.maginatics.jdbclint.resultset.double\_close
+* com.maginatics.jdbclint.resultset.missing\_close
+* com.maginatics.jdbclint.resultset.unread\_column
 
 JDBC lint enables all warnings by default and users can disable individual ones
 by setting the corresponding property to false.
