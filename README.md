@@ -66,8 +66,11 @@ use of finalization which depends on the behavior of Java garbage collection.
 References
 ----------
 JDBC has significant complexity and other tools can help write correct code.
-Specifically FindBugs can detect failures to close SQL resources and Java 7
-try-with-resources can prevent the same mistakes.  JDBI offers an
+Specifically [FindBugs](http://findbugs.sourceforge.net/)
+can detect failures to close SQL resources and Java 7
+[try-with-resources](http://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
+can prevent the same mistakes.
+[JDBI](http://jdbi.org/) offers an
 annotation-based approach to writing SQL which avoids some kinds of errors.
 JDBC lint can work in conjunction with all of these tools.
 
