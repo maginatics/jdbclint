@@ -41,10 +41,12 @@ Examples
 Users can enable it by wrapping their Connection or DataSource objects and
 configure it via Java properties.  For example:
 
-    java.sql.Connection connection = DriverManager.getConnection(...);
-    connection = com.maginatics.jdbclint.ConnectionProxy(connection);
-    connection.close();
-    connection.close();  // reports error and optionally throws exception
+```java
+Connection connection = DriverManager.getConnection(...);
+connection = com.maginatics.jdbclint.ConnectionProxy(connection);
+connection.close();
+connection.close();  // reports error and optionally throws exception
+```
 
 JDBC lint reports any errors to stderr by default and users can redirect this
 to a file by setting com.maginatics.jdbclint.log\_file .  Users can also throw
