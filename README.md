@@ -55,12 +55,11 @@ throw\_sql\_exception, or exit, respectively.
 Background
 ----------
 JDBC lint works by wrapping concrete implementations like Connection in a
-dynamic proxy classes[1].  This allows JDBC lint to add its checks before and
+[dynamic proxy classes](http://docs.oracle.com/javase/6/docs/api/java/lang/reflect/Proxy.html).
+This allows JDBC lint to add its checks before and
 after the concrete method invocation while preserving all behaviors of the
 original class.  Some checks like checking for missing Connection close require
 use of finalization which depends on the behavior of Java garbage collection.
-
-[1] http://docs.oracle.com/javase/6/docs/api/java/lang/reflect/Proxy.html
 
 References
 ----------
