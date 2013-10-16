@@ -26,6 +26,16 @@ properties:
 JDBC lint enables all warnings by default and users can disable individual ones
 by setting the corresponding property to false.
 
+Latest release is 0.1.0, available from Maven Central.
+
+```xml
+<dependency>
+    <groupId>com.maginatics</groupId>
+    <artifactId>jdbclint</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
 Examples
 --------
 Users can enable it by wrapping their Connection or DataSource objects and
