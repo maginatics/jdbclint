@@ -99,14 +99,17 @@ final class PreparedStatementProxy implements InvocationHandler {
                 // server-side prepared statements.
                 JdbcLint.fail(properties, exception,
                         "PreparedStatement already closed");
-            } else if (checkMissingExecute && expectExecute) {
+            }
+            closed = true;
+            if (checkMissingExecute && expectExecute) {
+                stmt.close();
                 JdbcLint.fail(properties, exception,
                         "PreparedStatement without execute");
             } else if (checkMissingExecuteBatch && expectExecuteBatch) {
+                stmt.close();
                 JdbcLint.fail(properties, exception,
                         "PreparedStatement addBatch without executeBatch");
             }
-            closed = true;
         }
 
         Object returnVal;

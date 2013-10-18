@@ -123,12 +123,16 @@ final class ResultSetProxy implements InvocationHandler {
             if (checkDoubleClose && closed) {
                 JdbcLint.fail(properties, exception,
                         "ResultSet already closed");
-            } else if (checkAllRowsConsumed && !allRowsConsumed) {
-                JdbcLint.fail(properties, exception,
-                        "ResultSet not fully consumed");
             }
             closed = true;
-            checkUnreadColumns();
+            if (checkAllRowsConsumed && !allRowsConsumed) {
+                rs.close();
+                JdbcLint.fail(properties, exception,
+                        "ResultSet not fully consumed");
+            } else if (!unreadColumns.isEmpty()) {
+                rs.close();
+                checkUnreadColumns();
+            }
         } else if (name.equals("next")) {
             return (Object) next();
         } else if (GETTERS.contains(name)) {
