@@ -55,7 +55,14 @@ public final class ConnectionProxy implements InvocationHandler {
         return newInstance(conn, System.getProperties());
     }
 
-    static Connection newInstance(final Connection conn,
+    /**
+     * Create a ConnectionProxy.
+     *
+     * @param conn Connection to proxy
+     * @param properties JDBC Lint configuration
+     * @return proxied Connection
+     */
+    public static Connection newInstance(final Connection conn,
             final Properties properties) {
         return (Connection) Proxy.newProxyInstance(
                 conn.getClass().getClassLoader(),

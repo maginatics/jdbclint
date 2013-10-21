@@ -40,7 +40,14 @@ public final class DataSourceProxy implements InvocationHandler {
         return newInstance(dataSource, System.getProperties());
     }
 
-    static DataSource newInstance(final DataSource dataSource,
+    /**
+     * Create a DataSourceProxy.
+     *
+     * @param dataSource DataSource to proxy
+     * @param properties JDBC Lint configuration
+     * @return proxied DataSource
+     */
+    public static DataSource newInstance(final DataSource dataSource,
             final Properties properties) {
         return (DataSource) Proxy.newProxyInstance(
                 dataSource.getClass().getClassLoader(),
