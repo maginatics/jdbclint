@@ -135,7 +135,7 @@ final class ResultSetProxy implements InvocationHandler {
                 checkUnreadColumns();
             }
         } else if (name.equals("next")) {
-            return (Object) next();
+            return next();
         } else if (GETTERS.contains(name)) {
             String columnLabel;
             if (args[0] instanceof Integer) {
