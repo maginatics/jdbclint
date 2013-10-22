@@ -35,7 +35,7 @@ import org.junit.rules.ExpectedException;
 /** Test JDBC lint checks. */
 // TODO: test close/finalize methods
 public final class JdbcLintTest {
-    private static AtomicLong dbNumber = new AtomicLong();
+    private static final AtomicLong dbNumber = new AtomicLong();
     private DataSource dataSource;
 
     /** Helper to match arbitrary exceptions in tests. */
@@ -209,7 +209,7 @@ public final class JdbcLintTest {
         blob.free();
     }
 
-    private static DataSource getDataSource() throws SQLException {
+    private static DataSource getDataSource() {
         Properties properties = new Properties();
         properties.setProperty(JdbcLint.FAIL_METHOD, "throw_sql_exception");
 
