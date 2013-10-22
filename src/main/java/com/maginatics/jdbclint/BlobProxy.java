@@ -30,7 +30,7 @@ import java.util.Properties;
  *     * whether Blob was freed
  *     * whether Blob was freed more than once
  */
-public final class BlobProxy implements InvocationHandler {
+final class BlobProxy implements InvocationHandler {
     private final Blob blob;
     private final Properties properties;
     private final Exception exception = new SQLException();
