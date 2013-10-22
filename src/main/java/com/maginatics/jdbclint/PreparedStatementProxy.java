@@ -28,8 +28,8 @@ import java.util.Properties;
 /**
  * PreparedStatementProxy proxies a PreparedStatement adding some checks.
  *
- *     * whether Statment was closed
- *     * whether Statment was closed more than once
+ *     * whether Statement was closed
+ *     * whether Statement was closed more than once
  */
 final class PreparedStatementProxy implements InvocationHandler {
     private final PreparedStatement stmt;
