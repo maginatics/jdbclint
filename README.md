@@ -7,7 +7,7 @@ JDBC lint.
 
 Features
 --------
-JDBC lint warns about 14 different conditions, configured via the following
+JDBC lint warns about many different conditions, configured via the following
 properties:
 
 * com.maginatics.jdbclint.blob.double\_free
@@ -44,8 +44,10 @@ Users can enable it by wrapping their Connection or DataSource objects and
 configure it via Java properties.  For example:
 
 ```java
+import com.maginatics.jdbclint.ConnectionProxy;
+...
 Connection connection = DriverManager.getConnection(...);
-connection = com.maginatics.jdbclint.ConnectionProxy(connection);
+connection = ConnectionProxy(connection, new Properties());
 connection.close();
 connection.close();  // reports error and optionally throws exception
 ```
