@@ -54,7 +54,7 @@ final class BlobProxy implements InvocationHandler {
             final Properties properties) {
         return (Blob) Proxy.newProxyInstance(
                 blob.getClass().getClassLoader(),
-                new Class[] {Blob.class},
+                new Class<?>[] {Blob.class},
                 new BlobProxy(blob, properties));
     }
 

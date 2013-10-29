@@ -56,7 +56,7 @@ public final class ConnectionProxy implements InvocationHandler {
             final Properties properties) {
         return (Connection) Proxy.newProxyInstance(
                 conn.getClass().getClassLoader(),
-                new Class[] {Connection.class},
+                new Class<?>[] {Connection.class},
                 new ConnectionProxy(conn, properties));
     }
 

@@ -95,7 +95,7 @@ final class ResultSetProxy implements InvocationHandler {
             final Properties properties) {
         return (ResultSet) Proxy.newProxyInstance(
                 rs.getClass().getClassLoader(),
-                new Class[] {ResultSet.class},
+                new Class<?>[] {ResultSet.class},
                 new ResultSetProxy(rs, properties));
     }
 

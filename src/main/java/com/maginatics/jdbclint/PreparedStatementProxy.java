@@ -59,7 +59,7 @@ final class PreparedStatementProxy implements InvocationHandler {
             final Properties properties) {
         return (PreparedStatement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
-                new Class[] {PreparedStatement.class},
+                new Class<?>[] {PreparedStatement.class},
                 new PreparedStatementProxy(stmt, properties));
     }
 

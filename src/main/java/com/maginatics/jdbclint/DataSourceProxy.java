@@ -41,7 +41,7 @@ public final class DataSourceProxy implements InvocationHandler {
             final Properties properties) {
         return (DataSource) Proxy.newProxyInstance(
                 dataSource.getClass().getClassLoader(),
-                new Class[] {DataSource.class},
+                new Class<?>[] {DataSource.class},
                 new DataSourceProxy(dataSource, properties));
     }
 
