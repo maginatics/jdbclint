@@ -45,16 +45,6 @@ final class PreparedStatementProxy implements InvocationHandler {
     private final boolean checkMissingExecute;
     private final boolean checkMissingExecuteBatch;
 
-    /**
-     * Create a PreparedStatementProxy.
-     *
-     * @param stmt PreparedStatement to proxy
-     * @return proxied PreparedStatement
-     */
-    static PreparedStatement newInstance(final PreparedStatement stmt) {
-        return newInstance(stmt, System.getProperties());
-    }
-
     static PreparedStatement newInstance(final PreparedStatement stmt,
             final Properties properties) {
         return (PreparedStatement) Proxy.newProxyInstance(

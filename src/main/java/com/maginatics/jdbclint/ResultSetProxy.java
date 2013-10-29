@@ -81,16 +81,6 @@ final class ResultSetProxy implements InvocationHandler {
     private final boolean checkMissingClose;
     private final boolean checkUnreadColumns;
 
-    /**
-     * Create a ResultSetProxy.
-     *
-     * @param rs ResultSet to proxy, possibly null
-     * @return proxied ResultSet
-     */
-    static ResultSet newInstance(final ResultSet rs) {
-        return newInstance(rs, System.getProperties());
-    }
-
     static ResultSet newInstance(final ResultSet rs,
             final Properties properties) {
         return (ResultSet) Proxy.newProxyInstance(

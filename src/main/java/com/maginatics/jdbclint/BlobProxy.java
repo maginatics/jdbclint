@@ -40,16 +40,6 @@ final class BlobProxy implements InvocationHandler {
     private final boolean checkDoubleFree;
     private final boolean checkMissingFree;
 
-    /**
-     * Create a BlobProxy.
-     *
-     * @param blob Blob to proxy
-     * @return proxied Blob
-     */
-    public static Blob newInstance(final Blob blob) {
-        return newInstance(blob, System.getProperties());
-    }
-
     static Blob newInstance(final Blob blob,
             final Properties properties) {
         return (Blob) Proxy.newProxyInstance(
