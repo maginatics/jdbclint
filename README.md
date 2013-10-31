@@ -24,6 +24,10 @@ properties:
 * com.maginatics.jdbclint.resultset.double\_close
 * com.maginatics.jdbclint.resultset.missing\_close
 * com.maginatics.jdbclint.resultset.unread\_column
+* com.maginatics.jdbclint.statement.double\_close
+* com.maginatics.jdbclint.statement.missing\_close
+* com.maginatics.jdbclint.statement.missing\_execute
+* com.maginatics.jdbclint.statement.missing\_execute\_batch
 
 JDBC lint enables all warnings by default and users can disable individual ones
 by setting the corresponding property to false.

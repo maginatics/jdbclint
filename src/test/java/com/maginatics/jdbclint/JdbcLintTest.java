@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -181,6 +182,39 @@ public final class JdbcLintTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("ResultSet has unread column: column");
         rs.next();
+    }
+
+    @Test
+    public void testStatementDoubleClose() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("INSERT INTO table (column) VALUES (0)");
+        stmt.close();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Statement already closed");
+        stmt.close();
+    }
+
+    @Test
+    public void testStatementMissingExecute() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        Statement stmt = conn.createStatement();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Statement without execute");
+        stmt.close();
+    }
+
+    @Test
+    public void testStatementMissingExecuteBatch() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.addBatch("INSERT INTO table (column) VALUES (0)");
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Statement addBatch without executeBatch");
+        stmt.close();
     }
 
     @Test

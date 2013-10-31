@@ -20,20 +20,21 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 /**
- * PreparedStatementProxy proxies a PreparedStatement adding some checks.
+ * StatementProxy proxies a Statement adding some checks.
  *
- *     * whether PreparedStatement was closed
- *     * whether PreparedStatement was closed more than once
- *     * whether PreparedStatement addBatch was called without executeBatch
+ *     * whether Statement was closed
+ *     * whether Statement was closed more than once
+ *     * whether Statement addBatch was called without executeBatch
  */
-final class PreparedStatementProxy implements InvocationHandler {
-    private final PreparedStatement stmt;
+// TODO: unify with PreparedStatementProxy?
+final class StatementProxy implements InvocationHandler {
+    private final Statement stmt;
     private final Properties properties;
     private final Exception exception = new SQLException();
 
@@ -46,29 +47,29 @@ final class PreparedStatementProxy implements InvocationHandler {
     private final boolean checkMissingExecute;
     private final boolean checkMissingExecuteBatch;
 
-    static PreparedStatement newInstance(final PreparedStatement stmt,
+    static Statement newInstance(final Statement stmt,
             final Properties properties) {
-        return (PreparedStatement) Proxy.newProxyInstance(
+        return (Statement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
-                new Class<?>[] {PreparedStatement.class},
-                new PreparedStatementProxy(stmt, properties));
+                new Class<?>[] {Statement.class},
+                new StatementProxy(stmt, properties));
     }
 
-    private PreparedStatementProxy(final PreparedStatement stmt,
+    private StatementProxy(final Statement stmt,
             final Properties properties) {
         this.stmt = JdbcLint.checkNotNull(stmt);
         this.properties = JdbcLint.checkNotNull(properties);
 
         checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.PREPARED_STATEMENT_DOUBLE_CLOSE));
+                JdbcLint.STATEMENT_DOUBLE_CLOSE));
         checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.PREPARED_STATEMENT_MISSING_CLOSE));
+                JdbcLint.STATEMENT_MISSING_CLOSE));
         checkMissingExecute = JdbcLint.nullEmptyOrTrue(
                 properties.getProperty(
-                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE));
+                        JdbcLint.STATEMENT_MISSING_EXECUTE));
         checkMissingExecuteBatch = JdbcLint.nullEmptyOrTrue(
                 properties.getProperty(
-                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE_BATCH));
+                        JdbcLint.STATEMENT_MISSING_EXECUTE_BATCH));
     }
 
     @Override
@@ -89,17 +90,17 @@ final class PreparedStatementProxy implements InvocationHandler {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
                 JdbcLint.fail(properties, exception,
-                        "PreparedStatement already closed");
+                        "Statement already closed");
             }
             closed = true;
             if (checkMissingExecute && expectExecute) {
                 stmt.close();
                 JdbcLint.fail(properties, exception,
-                        "PreparedStatement without execute");
+                        "Statement without execute");
             } else if (checkMissingExecuteBatch && expectExecuteBatch) {
                 stmt.close();
                 JdbcLint.fail(properties, exception,
-                        "PreparedStatement addBatch without executeBatch");
+                        "Statement addBatch without executeBatch");
             }
         }
 
@@ -123,7 +124,7 @@ final class PreparedStatementProxy implements InvocationHandler {
     protected void finalize() throws SQLException {
         if (checkMissingClose && !closed) {
             JdbcLint.fail(properties, exception,
-                    "PreparedStatement not closed");
+                    "Statement not closed");
         }
     }
 }

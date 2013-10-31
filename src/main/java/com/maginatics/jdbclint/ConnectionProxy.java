@@ -23,6 +23,7 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 /**
@@ -108,7 +109,12 @@ public final class ConnectionProxy implements InvocationHandler {
         } catch (InvocationTargetException ite) {
             throw ite.getTargetException();
         }
-        if (name.equals("prepareStatement")) {
+        if (name.equals("createStatement")) {
+            committedOrRolledBack = false;
+            expectPrepareStatement = false;
+            returnVal = StatementProxy.newInstance(
+                    (Statement) returnVal, properties);
+        } else if (name.equals("prepareStatement")) {
             committedOrRolledBack = false;
             expectPrepareStatement = false;
             returnVal = PreparedStatementProxy.newInstance(

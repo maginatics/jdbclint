@@ -34,6 +34,10 @@ public final class JdbcLint {
     /** Location to log warnings to.  If not set, logged to stderr. */
     public static final String LOG_FILE =
             "com.maginatics.jdbclint.log_file";
+    public static final String BLOB_DOUBLE_FREE =
+            "com.maginatics.jdbclint.blob.double_free";
+    public static final String BLOB_MISSING_FREE =
+            "com.maginatics.jdbclint.blob.missing_free";
     public static final String CONNECTION_DOUBLE_CLOSE =
             "com.maginatics.jdbclint.connection.double_close";
     public static final String CONNECTION_MISSING_CLOSE =
@@ -58,10 +62,14 @@ public final class JdbcLint {
             "com.maginatics.jdbclint.resultset.missing_close";
     public static final String RESULT_SET_UNREAD_COLUMN =
             "com.maginatics.jdbclint.resultset.unread_column";
-    public static final String BLOB_DOUBLE_FREE =
-            "com.maginatics.jdbclint.blob.double_free";
-    public static final String BLOB_MISSING_FREE =
-            "com.maginatics.jdbclint.blob.missing_free";
+    public static final String STATEMENT_DOUBLE_CLOSE =
+            "com.maginatics.jdbclint.statement.double_close";
+    public static final String STATEMENT_MISSING_CLOSE =
+            "com.maginatics.jdbclint.statement.missing_close";
+    public static final String STATEMENT_MISSING_EXECUTE =
+            "com.maginatics.jdbclint.statement.missing_execute";
+    public static final String STATEMENT_MISSING_EXECUTE_BATCH =
+            "com.maginatics.jdbclint.statement.missing_execute_batch";
 
     private JdbcLint() {
         // intentionally unimplemented
