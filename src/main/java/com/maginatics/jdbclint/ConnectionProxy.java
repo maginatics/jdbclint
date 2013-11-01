@@ -117,7 +117,7 @@ public final class ConnectionProxy implements InvocationHandler {
         } else if (name.equals("prepareStatement")) {
             committedOrRolledBack = false;
             expectPrepareStatement = false;
-            returnVal = PreparedStatementProxy.newInstance(
+            returnVal = StatementProxy.newInstance(
                     (PreparedStatement) returnVal, properties);
         }
         return returnVal;

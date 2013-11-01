@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -32,10 +33,10 @@ import java.util.Properties;
  *     * whether Statement was closed more than once
  *     * whether Statement addBatch was called without executeBatch
  */
-// TODO: unify with PreparedStatementProxy?
 final class StatementProxy implements InvocationHandler {
     private final Statement stmt;
     private final Properties properties;
+    private final String className;
     private final Exception exception = new SQLException();
 
     private boolean closed = false;
@@ -55,10 +56,19 @@ final class StatementProxy implements InvocationHandler {
                 new StatementProxy(stmt, properties));
     }
 
+    static PreparedStatement newInstance(final PreparedStatement stmt,
+            final Properties properties) {
+        return (PreparedStatement) Proxy.newProxyInstance(
+                stmt.getClass().getClassLoader(),
+                new Class<?>[] {PreparedStatement.class},
+                new StatementProxy(stmt, properties));
+    }
+
     private StatementProxy(final Statement stmt,
             final Properties properties) {
         this.stmt = JdbcLint.checkNotNull(stmt);
         this.properties = JdbcLint.checkNotNull(properties);
+        this.className = stmt.getClass().getName();
 
         checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
                 JdbcLint.STATEMENT_DOUBLE_CLOSE));
@@ -70,6 +80,24 @@ final class StatementProxy implements InvocationHandler {
         checkMissingExecuteBatch = JdbcLint.nullEmptyOrTrue(
                 properties.getProperty(
                         JdbcLint.STATEMENT_MISSING_EXECUTE_BATCH));
+    }
+
+    private StatementProxy(final PreparedStatement stmt,
+            final Properties properties) {
+        this.stmt = JdbcLint.checkNotNull(stmt);
+        this.properties = JdbcLint.checkNotNull(properties);
+        this.className = stmt.getClass().getName();
+
+        checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
+                JdbcLint.PREPARED_STATEMENT_DOUBLE_CLOSE));
+        checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
+                JdbcLint.PREPARED_STATEMENT_MISSING_CLOSE));
+        checkMissingExecute = JdbcLint.nullEmptyOrTrue(
+                properties.getProperty(
+                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE));
+        checkMissingExecuteBatch = JdbcLint.nullEmptyOrTrue(
+                properties.getProperty(
+                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE_BATCH));
     }
 
     @Override
@@ -90,17 +118,17 @@ final class StatementProxy implements InvocationHandler {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
                 JdbcLint.fail(properties, exception,
-                        "Statement already closed");
+                        className + " already closed");
             }
             closed = true;
             if (checkMissingExecute && expectExecute) {
                 stmt.close();
                 JdbcLint.fail(properties, exception,
-                        "Statement without execute");
+                        className + " without execute");
             } else if (checkMissingExecuteBatch && expectExecuteBatch) {
                 stmt.close();
                 JdbcLint.fail(properties, exception,
-                        "Statement addBatch without executeBatch");
+                        className + " addBatch without executeBatch");
             }
         }
 
@@ -124,7 +152,7 @@ final class StatementProxy implements InvocationHandler {
     protected void finalize() throws SQLException {
         if (checkMissingClose && !closed) {
             JdbcLint.fail(properties, exception,
-                    "Statement not closed");
+                    className + " not closed");
         }
     }
 }
