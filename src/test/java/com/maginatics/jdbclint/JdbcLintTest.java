@@ -139,22 +139,6 @@ public final class JdbcLintTest {
     }
 
     @Test
-    public void testResultSetAllRowsConsumed() throws SQLException {
-        Connection conn = dataSource.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
-        stmt.setInt(1, 0);
-        stmt.executeUpdate();
-        stmt.close();
-        stmt = conn.prepareStatement("SELECT * FROM table");
-        ResultSet rs = stmt.executeQuery();
-
-        thrown.expect(SQLException.class);
-        thrown.expectMessage("ResultSet not fully consumed");
-        rs.close();
-    }
-
-    @Test
     public void testResultSetDoubleClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement("SELECT * FROM table");

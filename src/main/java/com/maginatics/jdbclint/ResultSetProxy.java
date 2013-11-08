@@ -76,7 +76,6 @@ final class ResultSetProxy implements InvocationHandler {
     private boolean closed = false;
     private final Set<String> unreadColumns = new HashSet<String>();
 
-    private final boolean checkAllRowsConsumed;
     private final boolean checkDoubleClose;
     private final boolean checkMissingClose;
     private final boolean checkUnreadColumns;
@@ -93,8 +92,6 @@ final class ResultSetProxy implements InvocationHandler {
         this.rs = JdbcLint.checkNotNull(rs);
         this.properties = JdbcLint.checkNotNull(properties);
 
-        checkAllRowsConsumed = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.RESULT_SET_ALL_ROWS_CONSUMED));
         checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
                 JdbcLint.RESULT_SET_DOUBLE_CLOSE));
         checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
@@ -116,11 +113,7 @@ final class ResultSetProxy implements InvocationHandler {
                         "ResultSet already closed");
             }
             closed = true;
-            if (checkAllRowsConsumed && !allRowsConsumed) {
-                rs.close();
-                JdbcLint.fail(properties, exception,
-                        "ResultSet not fully consumed");
-            } else if (!unreadColumns.isEmpty()) {
+            if (!unreadColumns.isEmpty()) {
                 rs.close();
                 checkUnreadColumns();
             }

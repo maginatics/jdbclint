@@ -54,8 +54,6 @@ public final class JdbcLint {
             "com.maginatics.jdbclint.preparedstatement.missing_execute";
     public static final String PREPARED_STATEMENT_MISSING_EXECUTE_BATCH =
             "com.maginatics.jdbclint.preparedstatement.missing_execute_batch";
-    public static final String RESULT_SET_ALL_ROWS_CONSUMED =
-            "com.maginatics.jdbclint.resultset.all_rows_consumed";
     public static final String RESULT_SET_DOUBLE_CLOSE =
             "com.maginatics.jdbclint.resultset.double_close";
     public static final String RESULT_SET_MISSING_CLOSE =

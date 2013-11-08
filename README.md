@@ -20,7 +20,6 @@ properties:
 * com.maginatics.jdbclint.preparedstatement.missing\_close
 * com.maginatics.jdbclint.preparedstatement.missing\_execute
 * com.maginatics.jdbclint.preparedstatement.missing\_execute\_batch
-* com.maginatics.jdbclint.resultset.all\_rows\_consumed
 * com.maginatics.jdbclint.resultset.double\_close
 * com.maginatics.jdbclint.resultset.missing\_close
 * com.maginatics.jdbclint.resultset.unread\_column
