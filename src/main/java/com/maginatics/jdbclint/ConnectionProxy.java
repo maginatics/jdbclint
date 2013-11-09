@@ -61,7 +61,7 @@ public final class ConnectionProxy implements InvocationHandler {
                 new ConnectionProxy(conn, properties));
     }
 
-    private ConnectionProxy(final Connection conn,
+    ConnectionProxy(final Connection conn,
             final Properties properties) {
         this.conn = JdbcLint.checkNotNull(conn);
         this.properties = JdbcLint.checkNotNull(properties);

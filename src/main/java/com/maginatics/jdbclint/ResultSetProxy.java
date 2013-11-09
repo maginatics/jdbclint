@@ -88,7 +88,7 @@ final class ResultSetProxy implements InvocationHandler {
                 new ResultSetProxy(rs, properties));
     }
 
-    private ResultSetProxy(final ResultSet rs, final Properties properties) {
+    ResultSetProxy(final ResultSet rs, final Properties properties) {
         this.rs = JdbcLint.checkNotNull(rs);
         this.properties = JdbcLint.checkNotNull(properties);
 

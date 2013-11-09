@@ -39,6 +39,11 @@ public final class JdbcLintTest {
     private static final AtomicLong dbNumber = new AtomicLong();
     private DataSource dataSource;
 
+    private static final Properties properties = new Properties();
+    static {
+        properties.setProperty(JdbcLint.FAIL_METHOD, "throw_sql_exception");
+    }
+
     /** Helper to match arbitrary exceptions in tests. */
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
@@ -77,6 +82,16 @@ public final class JdbcLintTest {
     }
 
     @Test
+    public void testConnectionMissingClose() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        ConnectionProxy proxy = new ConnectionProxy(conn, properties);
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Connection not closed");
+        proxy.finalize();
+    }
+
+    @Test
     public void testConnectionMissingCommitOrRollback() throws SQLException {
         Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
@@ -111,6 +126,21 @@ public final class JdbcLintTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("PreparedStatement already closed");
         stmt.close();
+    }
+
+    @Test
+    public void testPreparedStatementMissingClose() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO table (column) VALUES (?)");
+        StatementProxy proxy = new StatementProxy(stmt, properties);
+        stmt.setInt(1, 0);
+        stmt.executeUpdate();
+        stmt.close();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("PreparedStatement not closed");
+        proxy.finalize();
     }
 
     @Test
@@ -152,6 +182,20 @@ public final class JdbcLintTest {
     }
 
     @Test
+    public void testResultSetMissingClose() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM table");
+        ResultSet rs = stmt.executeQuery();
+        ResultSetProxy proxy = new ResultSetProxy(rs, properties);
+        rs.next();
+        rs.close();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("ResultSet not closed");
+        proxy.finalize();
+    }
+
+    @Test
     public void testResultSetUnreadColumn() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
@@ -178,6 +222,19 @@ public final class JdbcLintTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("Statement already closed");
         stmt.close();
+    }
+
+    @Test
+    public void testStatementMissingClose() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        Statement stmt = conn.createStatement();
+        StatementProxy proxy = new StatementProxy(stmt, properties);
+        stmt.executeUpdate("INSERT INTO table (column) VALUES (0)");
+        stmt.close();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Statement not closed");
+        proxy.finalize();
     }
 
     @Test
@@ -227,10 +284,34 @@ public final class JdbcLintTest {
         blob.free();
     }
 
-    private static DataSource getDataSource() {
-        Properties properties = new Properties();
-        properties.setProperty(JdbcLint.FAIL_METHOD, "throw_sql_exception");
+    @Test
+    public void testBlobMissingFree() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(
+                "CREATE TABLE blob_table (column BLOB)");
+        stmt.executeUpdate();
+        stmt.close();
 
+        stmt = conn.prepareStatement(
+                "INSERT INTO blob_table (column) VALUES (?)");
+        stmt.setBytes(1, new byte[1]);
+        stmt.executeUpdate();
+        stmt.close();
+
+        stmt = conn.prepareStatement("SELECT column FROM blob_table");
+        ResultSet rs = stmt.executeQuery();
+        rs.next();
+
+        Blob blob = rs.getBlob("column");
+        BlobProxy proxy = new BlobProxy(blob, properties);
+        blob.free();
+
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Blob not freed");
+        proxy.finalize();
+    }
+
+    private static DataSource getDataSource() {
         JdbcDataSource jdbcDataSource = new JdbcDataSource();
         String dbName = "database-" + dbNumber.addAndGet(1);
         jdbcDataSource.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1");

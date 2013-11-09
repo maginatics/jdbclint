@@ -48,7 +48,7 @@ final class BlobProxy implements InvocationHandler {
                 new BlobProxy(blob, properties));
     }
 
-    private BlobProxy(final Blob blob, final Properties properties) {
+    BlobProxy(final Blob blob, final Properties properties) {
         this.blob = JdbcLint.checkNotNull(blob);
         this.properties = JdbcLint.checkNotNull(properties);
 

@@ -64,11 +64,10 @@ final class StatementProxy implements InvocationHandler {
                 new StatementProxy(stmt, properties));
     }
 
-    private StatementProxy(final Statement stmt,
-            final Properties properties) {
+    StatementProxy(final Statement stmt, final Properties properties) {
         this.stmt = JdbcLint.checkNotNull(stmt);
         this.properties = JdbcLint.checkNotNull(properties);
-        this.className = stmt.getClass().getName();
+        this.className = "Statement";
 
         checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
                 JdbcLint.STATEMENT_DOUBLE_CLOSE));
@@ -82,11 +81,10 @@ final class StatementProxy implements InvocationHandler {
                         JdbcLint.STATEMENT_MISSING_EXECUTE_BATCH));
     }
 
-    private StatementProxy(final PreparedStatement stmt,
-            final Properties properties) {
+    StatementProxy(final PreparedStatement stmt, final Properties properties) {
         this.stmt = JdbcLint.checkNotNull(stmt);
         this.properties = JdbcLint.checkNotNull(properties);
-        this.className = stmt.getClass().getName();
+        this.className = "PreparedStatement";
 
         checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
                 JdbcLint.PREPARED_STATEMENT_DOUBLE_CLOSE));
