@@ -31,7 +31,7 @@ properties:
 JDBC lint enables all warnings by default and users can disable individual ones
 by setting the corresponding property to false.
 
-To make use of JDBC lint in an Apache Maven based project, add it is a
+To make use of JDBC lint in an Apache Maven based project, add it as a
 dependency:
 
 ```xml
@@ -51,7 +51,7 @@ configure it via Java properties.  For example:
 import com.maginatics.jdbclint.ConnectionProxy;
 ...
 Connection connection = DriverManager.getConnection(...);
-connection = ConnectionProxy(connection, new Properties());
+connection = ConnectionProxy.newInstance(connection, new Properties());
 connection.close();
 connection.close();  // reports error and optionally throws exception
 ```
