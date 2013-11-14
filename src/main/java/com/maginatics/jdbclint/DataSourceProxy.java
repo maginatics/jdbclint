@@ -21,34 +21,33 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.util.Properties;
 
 import javax.sql.DataSource;
 
 /** DataSourceProxy proxies a DataSource adding some checks. */
 public final class DataSourceProxy implements InvocationHandler {
     private final DataSource dataSource;
-    private final Properties properties;
+    private final Configuration config;
 
     /**
      * Create a DataSourceProxy.
      *
      * @param dataSource DataSource to proxy
-     * @param properties JDBC Lint configuration
+     * @param config configuration
      * @return proxied DataSource
      */
     public static DataSource newInstance(final DataSource dataSource,
-            final Properties properties) {
+            final Configuration config) {
         return (DataSource) Proxy.newProxyInstance(
                 dataSource.getClass().getClassLoader(),
                 new Class<?>[] {DataSource.class},
-                new DataSourceProxy(dataSource, properties));
+                new DataSourceProxy(dataSource, config));
     }
 
     private DataSourceProxy(final DataSource dataSource,
-            final Properties properties) {
-        this.dataSource = JdbcLint.checkNotNull(dataSource);
-        this.properties = JdbcLint.checkNotNull(properties);
+            final Configuration config) {
+        this.dataSource = Utils.checkNotNull(dataSource);
+        this.config = Utils.checkNotNull(config);
     }
 
     @Override
@@ -62,7 +61,7 @@ public final class DataSourceProxy implements InvocationHandler {
         }
         if (method.getName().equals("getConnection")) {
             returnVal = ConnectionProxy.newInstance(
-                    (Connection) returnVal, properties);
+                    (Connection) returnVal, config);
         }
         return returnVal;
     }

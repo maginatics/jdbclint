@@ -22,7 +22,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.util.Properties;
+
+import com.maginatics.jdbclint.Configuration.Check;
 
 /**
  * BlobProxy proxies a Blob adding some checks.
@@ -32,30 +33,21 @@ import java.util.Properties;
  */
 final class BlobProxy implements InvocationHandler {
     private final Blob blob;
-    private final Properties properties;
+    private final Configuration config;
     private final Exception exception = new SQLException();
 
     private boolean freed = false;
 
-    private final boolean checkDoubleFree;
-    private final boolean checkMissingFree;
-
-    static Blob newInstance(final Blob blob,
-            final Properties properties) {
+    static Blob newInstance(final Blob blob, final Configuration config) {
         return (Blob) Proxy.newProxyInstance(
                 blob.getClass().getClassLoader(),
                 new Class<?>[] {Blob.class},
-                new BlobProxy(blob, properties));
+                new BlobProxy(blob, config));
     }
 
-    BlobProxy(final Blob blob, final Properties properties) {
-        this.blob = JdbcLint.checkNotNull(blob);
-        this.properties = JdbcLint.checkNotNull(properties);
-
-        checkDoubleFree = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.BLOB_DOUBLE_FREE));
-        checkMissingFree = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.BLOB_MISSING_FREE));
+    BlobProxy(final Blob blob, final Configuration config) {
+        this.blob = Utils.checkNotNull(blob);
+        this.config = Utils.checkNotNull(config);
     }
 
     @Override
@@ -63,9 +55,8 @@ final class BlobProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("free")) {
-            if (checkDoubleFree && freed) {
-                JdbcLint.fail(properties, exception,
-                        "Blob already freed");
+            if (config.isEnabled(Check.BLOB_DOUBLE_FREE) && freed) {
+                Utils.fail(config, exception, "Blob already freed");
             }
             freed = true;
         }
@@ -81,8 +72,8 @@ final class BlobProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingFree && !freed) {
-            JdbcLint.fail(properties, exception, "Blob not freed");
+        if (config.isEnabled(Check.BLOB_MISSING_FREE) && !freed) {
+            Utils.fail(config, exception, "Blob not freed");
         }
     }
 }

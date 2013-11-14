@@ -24,7 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
+
+import com.maginatics.jdbclint.Configuration.Check;
 
 /**
  * StatementProxy proxies a Statement adding some checks.
@@ -35,7 +36,7 @@ import java.util.Properties;
  */
 final class StatementProxy implements InvocationHandler {
     private final Statement stmt;
-    private final Properties properties;
+    private final Configuration config;
     private final String className;
     private final Exception exception = new SQLException();
 
@@ -53,53 +54,46 @@ final class StatementProxy implements InvocationHandler {
     private final boolean checkMissingExecuteBatch;
 
     static Statement newInstance(final Statement stmt,
-            final Properties properties) {
+            final Configuration config) {
         return (Statement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
                 new Class<?>[] {Statement.class},
-                new StatementProxy(stmt, properties));
+                new StatementProxy(stmt, config));
     }
 
     static PreparedStatement newInstance(final PreparedStatement stmt,
-            final Properties properties) {
+            final Configuration config) {
         return (PreparedStatement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
                 new Class<?>[] {PreparedStatement.class},
-                new StatementProxy(stmt, properties));
+                new StatementProxy(stmt, config));
     }
 
-    StatementProxy(final Statement stmt, final Properties properties) {
-        this.stmt = JdbcLint.checkNotNull(stmt);
-        this.properties = JdbcLint.checkNotNull(properties);
+    StatementProxy(final Statement stmt, final Configuration config) {
+        this.stmt = Utils.checkNotNull(stmt);
+        this.config = Utils.checkNotNull(config);
         this.className = "Statement";
 
-        checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.STATEMENT_DOUBLE_CLOSE));
-        checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.STATEMENT_MISSING_CLOSE));
-        checkMissingExecute = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.STATEMENT_MISSING_EXECUTE));
-        checkMissingExecuteBatch = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.STATEMENT_MISSING_EXECUTE_BATCH));
+        checkDoubleClose = config.isEnabled(Check.STATEMENT_DOUBLE_CLOSE);
+        checkMissingClose = config.isEnabled(Check.STATEMENT_MISSING_CLOSE);
+        checkMissingExecute = config.isEnabled(Check.STATEMENT_MISSING_EXECUTE);
+        checkMissingExecuteBatch = config.isEnabled(
+                Check.STATEMENT_MISSING_EXECUTE_BATCH);
     }
 
-    StatementProxy(final PreparedStatement stmt, final Properties properties) {
-        this.stmt = JdbcLint.checkNotNull(stmt);
-        this.properties = JdbcLint.checkNotNull(properties);
+    StatementProxy(final PreparedStatement stmt, final Configuration config) {
+        this.stmt = Utils.checkNotNull(stmt);
+        this.config = Utils.checkNotNull(config);
         this.className = "PreparedStatement";
 
-        checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.PREPARED_STATEMENT_DOUBLE_CLOSE));
-        checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.PREPARED_STATEMENT_MISSING_CLOSE));
-        checkMissingExecute = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE));
-        checkMissingExecuteBatch = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.PREPARED_STATEMENT_MISSING_EXECUTE_BATCH));
+        checkDoubleClose = config.isEnabled(
+                Check.PREPARED_STATEMENT_DOUBLE_CLOSE);
+        checkMissingClose = config.isEnabled(
+                Check.PREPARED_STATEMENT_MISSING_CLOSE);
+        checkMissingExecute = config.isEnabled(
+                Check.PREPARED_STATEMENT_MISSING_EXECUTE);
+        checkMissingExecuteBatch = config.isEnabled(
+                Check.PREPARED_STATEMENT_MISSING_EXECUTE_BATCH);
     }
 
     @Override
@@ -120,18 +114,16 @@ final class StatementProxy implements InvocationHandler {
             if (checkDoubleClose && state == State.CLOSED) {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
-                JdbcLint.fail(properties, exception,
-                        className + " already closed");
+                Utils.fail(config, exception, className + " already closed");
             } else if (checkMissingExecute && state == State.OPENED) {
                 state = State.CLOSED;
                 stmt.close();
-                JdbcLint.fail(properties, exception,
-                        className + " without execute");
+                Utils.fail(config, exception, className + " without execute");
             } else if (checkMissingExecuteBatch &&
                     state == State.IN_ADD_BATCH) {
                 state = State.CLOSED;
                 stmt.close();
-                JdbcLint.fail(properties, exception,
+                Utils.fail(config, exception,
                         className + " addBatch without executeBatch");
             }
             state = State.CLOSED;
@@ -147,7 +139,7 @@ final class StatementProxy implements InvocationHandler {
                 name.equals("getResultSet")) {
             if (returnVal != null) {
                 returnVal = ResultSetProxy.newInstance((ResultSet) returnVal,
-                        properties);
+                        config);
             }
         }
         return returnVal;
@@ -156,8 +148,7 @@ final class StatementProxy implements InvocationHandler {
     @Override
     protected void finalize() throws SQLException {
         if (checkMissingClose && state != State.CLOSED) {
-            JdbcLint.fail(properties, exception,
-                    className + " not closed");
+            Utils.fail(config, exception, className + " not closed");
         }
     }
 }

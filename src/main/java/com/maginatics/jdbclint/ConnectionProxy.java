@@ -24,7 +24,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
+
+import com.maginatics.jdbclint.Configuration.Check;
 
 /**
  * ConnectionProxy proxies a Connection adding some checks.
@@ -34,7 +35,7 @@ import java.util.Properties;
  */
 public final class ConnectionProxy implements InvocationHandler {
     private final Connection conn;
-    private final Properties properties;
+    private final Configuration config;
     private final Exception exception = new SQLException();
 
     private enum State {
@@ -45,41 +46,24 @@ public final class ConnectionProxy implements InvocationHandler {
     }
     private State state = State.OPENED;
 
-    private final boolean checkDoubleClose;
-    private final boolean checkExpectPrepareStatement;
-    private final boolean checkMissingClose;
-    private final boolean checkMissingCommitOrRollback;
-
     /**
      * Create a ConnectionProxy.
      *
      * @param conn Connection to proxy
-     * @param properties JDBC Lint configuration
+     * @param config configuration
      * @return proxied Connection
      */
     public static Connection newInstance(final Connection conn,
-            final Properties properties) {
+            final Configuration config) {
         return (Connection) Proxy.newProxyInstance(
                 conn.getClass().getClassLoader(),
                 new Class<?>[] {Connection.class},
-                new ConnectionProxy(conn, properties));
+                new ConnectionProxy(conn, config));
     }
 
-    ConnectionProxy(final Connection conn,
-            final Properties properties) {
-        this.conn = JdbcLint.checkNotNull(conn);
-        this.properties = JdbcLint.checkNotNull(properties);
-
-        checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.CONNECTION_DOUBLE_CLOSE));
-        checkExpectPrepareStatement = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.CONNECTION_MISSING_PREPARE_STATEMENT));
-        checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.CONNECTION_MISSING_CLOSE));
-        checkMissingCommitOrRollback = JdbcLint.nullEmptyOrTrue(
-                properties.getProperty(
-                        JdbcLint.CONNECTION_MISSING_COMMIT_OR_ROLLBACK));
+    ConnectionProxy(final Connection conn, final Configuration config) {
+        this.conn = Utils.checkNotNull(conn);
+        this.config = Utils.checkNotNull(config);
     }
 
     @Override
@@ -87,19 +71,22 @@ public final class ConnectionProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("close")) {
-            if (checkDoubleClose && state == State.CLOSED) {
-                JdbcLint.fail(properties, exception,
-                        "Connection already closed");
-            } else if (checkMissingCommitOrRollback &&
+            if (config.isEnabled(Check.CONNECTION_DOUBLE_CLOSE) &&
+                    state == State.CLOSED) {
+                Utils.fail(config, exception, "Connection already closed");
+            } else if (config.isEnabled(
+                            Check.CONNECTION_MISSING_COMMIT_OR_ROLLBACK) &&
                     !conn.getAutoCommit() && state == State.IN_TRANSACTION) {
                 state = State.CLOSED;
                 conn.close();
-                JdbcLint.fail(properties, exception,
+                Utils.fail(config, exception,
                         "Connection did not commit or roll back");
-            } else if (checkExpectPrepareStatement && state == State.OPENED) {
+            } else if (config.isEnabled(
+                            Check.CONNECTION_MISSING_PREPARE_STATEMENT) &&
+                    state == State.OPENED) {
                 state = State.CLOSED;
                 conn.close();
-                JdbcLint.fail(properties, exception,
+                Utils.fail(config, exception,
                         "Connection without prepareStatement");
             }
             state = State.CLOSED;
@@ -116,19 +103,20 @@ public final class ConnectionProxy implements InvocationHandler {
         if (name.equals("createStatement")) {
             state = State.IN_TRANSACTION;
             returnVal = StatementProxy.newInstance(
-                    (Statement) returnVal, properties);
+                    (Statement) returnVal, config);
         } else if (name.equals("prepareStatement")) {
             state = State.IN_TRANSACTION;
             returnVal = StatementProxy.newInstance(
-                    (PreparedStatement) returnVal, properties);
+                    (PreparedStatement) returnVal, config);
         }
         return returnVal;
     }
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingClose && state != State.CLOSED) {
-            JdbcLint.fail(properties, exception, "Connection not closed");
+        if (config.isEnabled(Check.CONNECTION_MISSING_CLOSE) &&
+                state != State.CLOSED) {
+            Utils.fail(config, exception, "Connection not closed");
         }
     }
 }
