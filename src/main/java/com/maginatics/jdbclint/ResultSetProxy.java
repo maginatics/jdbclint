@@ -27,8 +27,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
+
+import com.maginatics.jdbclint.Configuration.Check;
 
 /**
  * ResultSetProxy proxies a ResultSet adding some checks.
@@ -69,34 +70,23 @@ final class ResultSetProxy implements InvocationHandler {
                     "getURL")));
 
     private final ResultSet rs;
-    private final Properties properties;
+    private final Configuration config;
     private final SQLException exception = new SQLException();
 
     private boolean closed = false;
     private final Set<String> unreadColumns = new HashSet<String>();
 
-    private final boolean checkDoubleClose;
-    private final boolean checkMissingClose;
-    private final boolean checkUnreadColumns;
-
     static ResultSet newInstance(final ResultSet rs,
-            final Properties properties) {
+            final Configuration config) {
         return (ResultSet) Proxy.newProxyInstance(
                 rs.getClass().getClassLoader(),
                 new Class<?>[] {ResultSet.class},
-                new ResultSetProxy(rs, properties));
+                new ResultSetProxy(rs, config));
     }
 
-    ResultSetProxy(final ResultSet rs, final Properties properties) {
-        this.rs = JdbcLint.checkNotNull(rs);
-        this.properties = JdbcLint.checkNotNull(properties);
-
-        checkDoubleClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.RESULT_SET_DOUBLE_CLOSE));
-        checkMissingClose = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.RESULT_SET_MISSING_CLOSE));
-        checkUnreadColumns = JdbcLint.nullEmptyOrTrue(properties.getProperty(
-                JdbcLint.RESULT_SET_UNREAD_COLUMN));
+    ResultSetProxy(final ResultSet rs, final Configuration config) {
+        this.rs = Utils.checkNotNull(rs);
+        this.config = Utils.checkNotNull(config);
     }
 
     @Override
@@ -107,9 +97,8 @@ final class ResultSetProxy implements InvocationHandler {
             // multiplexing clearWarnings to disable unread column checking
             unreadColumns.clear();
         } else if (name.equals("close")) {
-            if (checkDoubleClose && closed) {
-                JdbcLint.fail(properties, exception,
-                        "ResultSet already closed");
+            if (config.isEnabled(Check.RESULT_SET_DOUBLE_CLOSE) && closed) {
+                Utils.fail(config, exception, "ResultSet already closed");
             }
             closed = true;
             if (!unreadColumns.isEmpty()) {
@@ -130,7 +119,7 @@ final class ResultSetProxy implements InvocationHandler {
         try {
             Object returnVal = method.invoke(rs, args);
             if (name.equals("getBlob")) {
-                returnVal = BlobProxy.newInstance((Blob) returnVal, properties);
+                returnVal = BlobProxy.newInstance((Blob) returnVal, config);
             }
             return returnVal;
         } catch (InvocationTargetException ite) {
@@ -140,8 +129,8 @@ final class ResultSetProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingClose && !closed) {
-            JdbcLint.fail(properties, exception, "ResultSet not closed");
+        if (config.isEnabled(Check.RESULT_SET_MISSING_CLOSE) && !closed) {
+            Utils.fail(config, exception, "ResultSet not closed");
         }
     }
 
@@ -149,7 +138,7 @@ final class ResultSetProxy implements InvocationHandler {
         checkUnreadColumns();
         boolean result = rs.next();
         if (result) {
-            if (checkUnreadColumns) {
+            if (config.isEnabled(Check.RESULT_SET_UNREAD_COLUMN)) {
                 ResultSetMetaData metaData = rs.getMetaData();
                 for (int i = 1; i <= metaData.getColumnCount(); ++i) {
                     unreadColumns.add(metaData.getColumnLabel(i).toLowerCase());
@@ -161,8 +150,7 @@ final class ResultSetProxy implements InvocationHandler {
 
     private void checkUnreadColumns() throws SQLException {
         if (!unreadColumns.isEmpty()) {
-            JdbcLint.fail(properties, exception,
-                    "ResultSet has unread column: " +
+            Utils.fail(config, exception, "ResultSet has unread column: " +
                     unreadColumns.iterator().next());
         }
     }

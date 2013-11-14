@@ -23,7 +23,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -35,13 +34,11 @@ import org.junit.rules.ExpectedException;
 
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
+    private static final Configuration config = Configuration.defaults()
+            .setFailMethod(Configuration.FailMethod.THROW_SQL_EXCEPTION)
+            .build();
     private static final String DATABASE_NAME = "jdbclinttest";
     private DataSource dataSource;
-
-    private static final Properties properties = new Properties();
-    static {
-        properties.setProperty(JdbcLint.FAIL_METHOD, "throw_sql_exception");
-    }
 
     /** Helper to match arbitrary exceptions in tests. */
     @Rule
@@ -316,6 +313,6 @@ public final class JdbcLintTest {
         JdbcDataSource jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setURL("jdbc:h2:mem:" + DATABASE_NAME +
                 ";DB_CLOSE_DELAY=-1");
-        return DataSourceProxy.newInstance(jdbcDataSource, properties);
+        return DataSourceProxy.newInstance(jdbcDataSource, config);
     }
 }
