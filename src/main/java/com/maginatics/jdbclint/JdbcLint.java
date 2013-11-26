@@ -86,7 +86,7 @@ public final class JdbcLint {
                         /*append=*/ true));
             }
             ps.println(message);
-            exception.printStackTrace(ps);
+            new SQLException(exception).printStackTrace(ps);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
