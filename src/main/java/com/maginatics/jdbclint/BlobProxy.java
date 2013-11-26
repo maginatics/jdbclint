@@ -64,7 +64,7 @@ final class BlobProxy implements InvocationHandler {
         String name = method.getName();
         if (name.equals("free")) {
             if (checkDoubleFree && freed) {
-                JdbcLint.fail(properties, exception,
+                JdbcLint.fail(properties, new SQLException(),
                         "Blob already freed");
             }
             freed = true;
