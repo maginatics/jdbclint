@@ -81,6 +81,8 @@ can detect failures to close SQL resources and Java 7
 can prevent the same mistakes.
 [JDBI](http://jdbi.org/) offers an
 annotation-based approach to writing SQL which avoids some kinds of errors.
+[jOOQ](http://www.jooq.org) offers a fluent API that hides most interaction
+with JDBC from client code.
 JDBC lint can work in conjunction with all of these tools.
 
 License
