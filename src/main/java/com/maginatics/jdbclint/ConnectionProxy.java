@@ -84,19 +84,19 @@ public final class ConnectionProxy implements InvocationHandler {
         String name = method.getName();
         if (name.equals("close")) {
             if (checkDoubleClose && closed) {
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         "Connection already closed");
             }
             closed = true;
             if (checkMissingCommitOrRollback &&
                     !conn.getAutoCommit() && !committedOrRolledBack) {
                 conn.close();
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         "Connection did not commit or roll back");
             } else if (checkExpectPrepareStatement &&
                     expectPrepareStatement) {
                 conn.close();
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         "Connection without prepareStatement");
             }
         } else if (name.equals("commit") || name.equals("rollback")) {

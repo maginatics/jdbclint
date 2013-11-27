@@ -115,17 +115,17 @@ final class StatementProxy implements InvocationHandler {
             if (checkDoubleClose && closed) {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         className + " already closed");
             }
             closed = true;
             if (checkMissingExecute && expectExecute) {
                 stmt.close();
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         className + " without execute");
             } else if (checkMissingExecuteBatch && expectExecuteBatch) {
                 stmt.close();
-                JdbcLint.fail(properties, new SQLException(),
+                JdbcLint.fail(properties, new SQLException(exception),
                         className + " addBatch without executeBatch");
             }
         }
