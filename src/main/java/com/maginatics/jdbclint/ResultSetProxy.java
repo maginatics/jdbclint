@@ -109,7 +109,7 @@ final class ResultSetProxy implements InvocationHandler {
             unreadColumns.clear();
         } else if (name.equals("close")) {
             if (checkDoubleClose && closed) {
-                JdbcLint.fail(properties, exception,
+                JdbcLint.fail(properties, new SQLException(exception),
                         "ResultSet already closed");
             }
             closed = true;
@@ -164,7 +164,7 @@ final class ResultSetProxy implements InvocationHandler {
 
     private void checkUnreadColumns() throws SQLException {
         if (!unreadColumns.isEmpty()) {
-            JdbcLint.fail(properties, exception,
+            JdbcLint.fail(properties, new SQLException(exception),
                     "ResultSet has unread column: " +
                     unreadColumns.iterator().next());
         }
