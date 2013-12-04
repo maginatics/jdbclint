@@ -26,11 +26,12 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.postgresql.ds.PGSimpleDataSource;
 
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
@@ -258,6 +259,8 @@ public final class JdbcLintTest {
         stmt.close();
     }
 
+    // PostgreSQL does not support java.sql.Blob
+    @Ignore
     @Test
     public void testBlobDoubleFree() throws SQLException {
         Connection conn = dataSource.getConnection();
@@ -284,6 +287,8 @@ public final class JdbcLintTest {
         blob.free();
     }
 
+    // PostgreSQL does not support java.sql.Blob
+    @Ignore
     @Test
     public void testBlobMissingFree() throws SQLException {
         Connection conn = dataSource.getConnection();
@@ -323,9 +328,10 @@ public final class JdbcLintTest {
     }
 
     private static DataSource getDataSource() {
-        JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setURL("jdbc:h2:mem:" + DATABASE_NAME +
-                ";DB_CLOSE_DELAY=-1");
+        PGSimpleDataSource jdbcDataSource = new PGSimpleDataSource();
+        jdbcDataSource.setDatabaseName(DATABASE_NAME);
+        jdbcDataSource.setUser("postgres");
+        jdbcDataSource.setPassword("apassword");
         return DataSourceProxy.newInstance(jdbcDataSource, config);
     }
 }
