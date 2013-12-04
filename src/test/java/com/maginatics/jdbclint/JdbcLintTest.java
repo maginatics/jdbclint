@@ -26,11 +26,12 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
@@ -322,10 +323,12 @@ public final class JdbcLintTest {
         conn.close();
     }
 
-    private static DataSource getDataSource() {
-        JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setURL("jdbc:h2:mem:" + DATABASE_NAME +
-                ";DB_CLOSE_DELAY=-1");
+    private DataSource getDataSource() throws SQLException {
+        MysqlConnectionPoolDataSource jdbcDataSource =
+                new MysqlConnectionPoolDataSource();
+        jdbcDataSource.setURL("jdbc:mysql://127.0.0.1/" + DATABASE_NAME +
+                "?createDatabaseIfNotExist=true");
+        jdbcDataSource.setUser("root");
         return DataSourceProxy.newInstance(jdbcDataSource, config);
     }
 }
