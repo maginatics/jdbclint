@@ -55,7 +55,7 @@ public final class JdbcLintTest {
         Connection conn = dataSource.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(
-                    "CREATE TABLE table (column INT)");
+                    "CREATE TABLE int_table (int_column INT)");
             try {
                 stmt.execute();
             } finally {
@@ -70,7 +70,7 @@ public final class JdbcLintTest {
     public void testConnectionDoubleClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
         stmt.executeUpdate();
         stmt.close();
@@ -96,7 +96,7 @@ public final class JdbcLintTest {
         Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
         stmt.executeUpdate();
         stmt.close();
@@ -118,7 +118,7 @@ public final class JdbcLintTest {
     public void testPreparedStatementDoubleClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
         stmt.executeUpdate();
         stmt.close();
@@ -132,7 +132,7 @@ public final class JdbcLintTest {
     public void testPreparedStatementMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         StatementProxy proxy = new StatementProxy(stmt, properties);
         stmt.setInt(1, 0);
         stmt.executeUpdate();
@@ -147,7 +147,7 @@ public final class JdbcLintTest {
     public void testPreparedStatementMissingExecute() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
 
         thrown.expect(SQLException.class);
@@ -159,7 +159,7 @@ public final class JdbcLintTest {
     public void testPreparedStatementMissingExecuteBatch() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
         stmt.addBatch();
 
@@ -171,7 +171,8 @@ public final class JdbcLintTest {
     @Test
     public void testResultSetDoubleClose() throws SQLException {
         Connection conn = dataSource.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM table");
+        PreparedStatement stmt = conn.prepareStatement(
+                "SELECT * FROM int_table");
         ResultSet rs = stmt.executeQuery();
         rs.next();
         rs.close();
@@ -184,7 +185,8 @@ public final class JdbcLintTest {
     @Test
     public void testResultSetMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM table");
+        PreparedStatement stmt = conn.prepareStatement(
+                "SELECT * FROM int_table");
         ResultSet rs = stmt.executeQuery();
         ResultSetProxy proxy = new ResultSetProxy(rs, properties);
         rs.next();
@@ -199,16 +201,16 @@ public final class JdbcLintTest {
     public void testResultSetUnreadColumn() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO table (column) VALUES (?)");
+                "INSERT INTO int_table (int_column) VALUES (?)");
         stmt.setInt(1, 0);
         stmt.executeUpdate();
         stmt.close();
-        stmt = conn.prepareStatement("SELECT * FROM table");
+        stmt = conn.prepareStatement("SELECT * FROM int_table");
         ResultSet rs = stmt.executeQuery();
         rs.next();
 
         thrown.expect(SQLException.class);
-        thrown.expectMessage("ResultSet has unread column: column");
+        thrown.expectMessage("ResultSet has unread column: int_column");
         rs.next();
     }
 
@@ -216,7 +218,7 @@ public final class JdbcLintTest {
     public void testStatementDoubleClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement();
-        stmt.executeUpdate("INSERT INTO table (column) VALUES (0)");
+        stmt.executeUpdate("INSERT INTO int_table (int_column) VALUES (0)");
         stmt.close();
 
         thrown.expect(SQLException.class);
@@ -229,7 +231,7 @@ public final class JdbcLintTest {
         Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement();
         StatementProxy proxy = new StatementProxy(stmt, properties);
-        stmt.executeUpdate("INSERT INTO table (column) VALUES (0)");
+        stmt.executeUpdate("INSERT INTO int_table (int_column) VALUES (0)");
         stmt.close();
 
         thrown.expect(SQLException.class);
@@ -251,7 +253,7 @@ public final class JdbcLintTest {
     public void testStatementMissingExecuteBatch() throws SQLException {
         Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement();
-        stmt.addBatch("INSERT INTO table (column) VALUES (0)");
+        stmt.addBatch("INSERT INTO int_table (int_column) VALUES (0)");
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("Statement addBatch without executeBatch");
@@ -262,21 +264,21 @@ public final class JdbcLintTest {
     public void testBlobDoubleFree() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "CREATE TABLE blob_table (column BLOB)");
+                "CREATE TABLE blob_table (blob_column BLOB)");
         stmt.executeUpdate();
         stmt.close();
 
         stmt = conn.prepareStatement(
-                "INSERT INTO blob_table (column) VALUES (?)");
+                "INSERT INTO blob_table (blob_column) VALUES (?)");
         stmt.setBytes(1, new byte[1]);
         stmt.executeUpdate();
         stmt.close();
 
-        stmt = conn.prepareStatement("SELECT column FROM blob_table");
+        stmt = conn.prepareStatement("SELECT blob_column FROM blob_table");
         ResultSet rs = stmt.executeQuery();
         rs.next();
 
-        Blob blob = rs.getBlob("column");
+        Blob blob = rs.getBlob("blob_column");
         blob.free();
 
         thrown.expect(SQLException.class);
@@ -288,21 +290,21 @@ public final class JdbcLintTest {
     public void testBlobMissingFree() throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-                "CREATE TABLE blob_table (column BLOB)");
+                "CREATE TABLE blob_table (blob_column BLOB)");
         stmt.executeUpdate();
         stmt.close();
 
         stmt = conn.prepareStatement(
-                "INSERT INTO blob_table (column) VALUES (?)");
+                "INSERT INTO blob_table (blob_column) VALUES (?)");
         stmt.setBytes(1, new byte[1]);
         stmt.executeUpdate();
         stmt.close();
 
-        stmt = conn.prepareStatement("SELECT column FROM blob_table");
+        stmt = conn.prepareStatement("SELECT blob_column FROM blob_table");
         ResultSet rs = stmt.executeQuery();
         rs.next();
 
-        Blob blob = rs.getBlob("column");
+        Blob blob = rs.getBlob("blob_column");
         BlobProxy proxy = new BlobProxy(blob, properties);
         blob.free();
 
