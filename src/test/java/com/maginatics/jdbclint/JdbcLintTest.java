@@ -23,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
@@ -35,7 +34,7 @@ import org.junit.rules.ExpectedException;
 
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
-    private static final AtomicLong dbNumber = new AtomicLong();
+    private static final String DATABASE_NAME = "jdbclinttest";
     private DataSource dataSource;
 
     private static final Properties properties = new Properties();
@@ -53,10 +52,11 @@ public final class JdbcLintTest {
         dataSource = getDataSource();
         Connection conn = dataSource.getConnection();
         try {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "CREATE TABLE int_table (int_column INT)");
+            Statement stmt = conn.createStatement();
             try {
-                stmt.execute();
+                stmt.execute("DROP TABLE IF EXISTS blob_table");
+                stmt.execute("DROP TABLE IF EXISTS int_table");
+                stmt.execute("CREATE TABLE int_table (int_column INT)");
             } finally {
                 stmt.close();
             }
@@ -314,8 +314,8 @@ public final class JdbcLintTest {
 
     private static DataSource getDataSource() {
         JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        String dbName = "database-" + dbNumber.addAndGet(1);
-        jdbcDataSource.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1");
+        jdbcDataSource.setURL("jdbc:h2:mem:" + DATABASE_NAME +
+                ";DB_CLOSE_DELAY=-1");
         return DataSourceProxy.newInstance(jdbcDataSource, properties);
     }
 }
