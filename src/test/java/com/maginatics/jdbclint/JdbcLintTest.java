@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 /** Test JDBC lint checks. */
-// TODO: test close/finalize methods
 public final class JdbcLintTest {
     private static final AtomicLong dbNumber = new AtomicLong();
     private DataSource dataSource;
