@@ -109,8 +109,6 @@ final class StatementProxy implements InvocationHandler {
             expectExecuteBatch = false;
         } else if (name.startsWith("execute")) {
             expectExecute = false;
-        } else if (name.equals("prepareStatement")) {
-            expectExecute = true;
         } else if (name.equals("close")) {
             if (checkDoubleClose && closed) {
                 // Closing the same statement twice can cause issues with
