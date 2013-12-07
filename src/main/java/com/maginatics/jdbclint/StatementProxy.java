@@ -39,9 +39,13 @@ final class StatementProxy implements InvocationHandler {
     private final String className;
     private final Exception exception = new SQLException();
 
-    private boolean closed = false;
-    private boolean expectExecute = true;
-    private boolean expectExecuteBatch = false;
+    private enum State {
+        OPENED,
+        IN_ADD_BATCH,
+        EXECUTED,
+        CLOSED;
+    }
+    private State state = State.OPENED;
 
     private final boolean checkDoubleClose;
     private final boolean checkMissingClose;
@@ -103,29 +107,30 @@ final class StatementProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("addBatch")) {
-            expectExecute = false;
-            expectExecuteBatch = true;
+            state = State.IN_ADD_BATCH;
         } else if (name.equals("executeBatch")) {
-            expectExecuteBatch = false;
+            state = State.EXECUTED;
         } else if (name.startsWith("execute")) {
-            expectExecute = false;
+            state = State.EXECUTED;
         } else if (name.equals("close")) {
-            if (checkDoubleClose && closed) {
+            if (checkDoubleClose && state == State.CLOSED) {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
                 JdbcLint.fail(properties, exception,
                         className + " already closed");
-            }
-            closed = true;
-            if (checkMissingExecute && expectExecute) {
+            } else if (checkMissingExecute && state == State.OPENED) {
+                state = State.CLOSED;
                 stmt.close();
                 JdbcLint.fail(properties, exception,
                         className + " without execute");
-            } else if (checkMissingExecuteBatch && expectExecuteBatch) {
+            } else if (checkMissingExecuteBatch &&
+                    state == State.IN_ADD_BATCH) {
+                state = State.CLOSED;
                 stmt.close();
                 JdbcLint.fail(properties, exception,
                         className + " addBatch without executeBatch");
             }
+            state = State.CLOSED;
         }
 
         Object returnVal;
@@ -146,7 +151,7 @@ final class StatementProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingClose && !closed) {
+        if (checkMissingClose && state != State.CLOSED) {
             JdbcLint.fail(properties, exception,
                     className + " not closed");
         }

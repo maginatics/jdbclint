@@ -37,9 +37,13 @@ public final class ConnectionProxy implements InvocationHandler {
     private final Properties properties;
     private final Exception exception = new SQLException();
 
-    private boolean closed = false;
-    private boolean committedOrRolledBack = true;
-    private boolean expectPrepareStatement = true;
+    private enum State {
+        OPENED,
+        IN_TRANSACTION,
+        COMMITTED,
+        CLOSED;
+    }
+    private State state = State.OPENED;
 
     private final boolean checkDoubleClose;
     private final boolean checkExpectPrepareStatement;
@@ -83,24 +87,24 @@ public final class ConnectionProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("close")) {
-            if (checkDoubleClose && closed) {
+            if (checkDoubleClose && state == State.CLOSED) {
                 JdbcLint.fail(properties, exception,
                         "Connection already closed");
-            }
-            closed = true;
-            if (checkMissingCommitOrRollback &&
-                    !conn.getAutoCommit() && !committedOrRolledBack) {
+            } else if (checkMissingCommitOrRollback &&
+                    !conn.getAutoCommit() && state == State.IN_TRANSACTION) {
+                state = State.CLOSED;
                 conn.close();
                 JdbcLint.fail(properties, exception,
                         "Connection did not commit or roll back");
-            } else if (checkExpectPrepareStatement &&
-                    expectPrepareStatement) {
+            } else if (checkExpectPrepareStatement && state == State.OPENED) {
+                state = State.CLOSED;
                 conn.close();
                 JdbcLint.fail(properties, exception,
                         "Connection without prepareStatement");
             }
+            state = State.CLOSED;
         } else if (name.equals("commit") || name.equals("rollback")) {
-            committedOrRolledBack = true;
+            state = State.COMMITTED;
         }
 
         Object returnVal;
@@ -110,13 +114,11 @@ public final class ConnectionProxy implements InvocationHandler {
             throw ite.getTargetException();
         }
         if (name.equals("createStatement")) {
-            committedOrRolledBack = false;
-            expectPrepareStatement = false;
+            state = State.IN_TRANSACTION;
             returnVal = StatementProxy.newInstance(
                     (Statement) returnVal, properties);
         } else if (name.equals("prepareStatement")) {
-            committedOrRolledBack = false;
-            expectPrepareStatement = false;
+            state = State.IN_TRANSACTION;
             returnVal = StatementProxy.newInstance(
                     (PreparedStatement) returnVal, properties);
         }
@@ -125,7 +127,7 @@ public final class ConnectionProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingClose && !closed) {
+        if (checkMissingClose && state != State.CLOSED) {
             JdbcLint.fail(properties, exception, "Connection not closed");
         }
     }
