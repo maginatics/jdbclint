@@ -72,7 +72,6 @@ final class ResultSetProxy implements InvocationHandler {
     private final Properties properties;
     private final SQLException exception = new SQLException();
 
-    private boolean allRowsConsumed = false;
     private boolean closed = false;
     private final Set<String> unreadColumns = new HashSet<String>();
 
@@ -156,8 +155,6 @@ final class ResultSetProxy implements InvocationHandler {
                     unreadColumns.add(metaData.getColumnLabel(i).toLowerCase());
                 }
             }
-        } else {
-            allRowsConsumed = true;
         }
         return result;
     }
