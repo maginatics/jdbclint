@@ -108,9 +108,13 @@ final class StatementProxy implements InvocationHandler {
         String name = method.getName();
         if (name.equals("addBatch")) {
             state = State.IN_ADD_BATCH;
-        } else if (name.equals("executeBatch")) {
+        } else if (name.equals("executeBatch") ||
+                name.equals("executeLargeBatch")) {
             state = State.EXECUTED;
-        } else if (name.startsWith("execute")) {
+        } else if (name.equals("execute") ||
+                name.equals("executeLargeUpdate") ||
+                name.equals("executeQuery") ||
+                name.equals("executeUpdate")) {
             state = State.EXECUTED;
         } else if (name.equals("close")) {
             if (checkDoubleClose && state == State.CLOSED) {
