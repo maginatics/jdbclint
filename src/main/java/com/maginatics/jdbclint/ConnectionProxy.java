@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.maginatics.jdbclint.Configuration.Check;
 
@@ -37,6 +38,7 @@ public final class ConnectionProxy implements InvocationHandler {
     private final Connection conn;
     private final Configuration config;
     private final Exception exception = new SQLException();
+    private final AtomicBoolean readOnly = new AtomicBoolean(true);
 
     private enum State {
         OPENED,
@@ -90,6 +92,13 @@ public final class ConnectionProxy implements InvocationHandler {
                         "Connection without prepareStatement");
             }
             state = State.CLOSED;
+            if (config.isEnabled(Check.CONNECTION_MISSING_READ_ONLY) &&
+                isReadOnly() && !conn.isReadOnly()) {
+                conn.close();
+                Utils.fail(config, exception,
+                    "Connection did not execute updates, " +
+                    "consider calling setReadOnly");
+            }
         } else if (name.equals("commit") || name.equals("rollback")) {
             state = State.COMMITTED;
         }
@@ -102,11 +111,11 @@ public final class ConnectionProxy implements InvocationHandler {
         }
         if (name.equals("createStatement")) {
             state = State.IN_TRANSACTION;
-            returnVal = StatementProxy.newInstance(
+            returnVal = StatementProxy.newInstance(this,
                     (Statement) returnVal, config);
         } else if (name.equals("prepareStatement")) {
             state = State.IN_TRANSACTION;
-            returnVal = StatementProxy.newInstance(
+            returnVal = StatementProxy.newInstance(this,
                     (PreparedStatement) returnVal, config);
         }
         return returnVal;
@@ -118,5 +127,13 @@ public final class ConnectionProxy implements InvocationHandler {
                 state != State.CLOSED) {
             Utils.fail(config, exception, "Connection not closed");
         }
+    }
+
+    public void setReadOnly(final boolean readOnly) {
+        this.readOnly.set(readOnly);
+    }
+
+    public boolean isReadOnly() {
+        return readOnly.get();
     }
 }

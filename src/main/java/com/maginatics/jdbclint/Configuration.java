@@ -43,6 +43,7 @@ public final class Configuration {
         CONNECTION_MISSING_CLOSE,
         CONNECTION_MISSING_COMMIT_OR_ROLLBACK,
         CONNECTION_MISSING_PREPARE_STATEMENT,
+        CONNECTION_MISSING_READ_ONLY,
         PREPARED_STATEMENT_DOUBLE_CLOSE,
         PREPARED_STATEMENT_MISSING_CLOSE,
         PREPARED_STATEMENT_MISSING_EXECUTE,
@@ -73,7 +74,7 @@ public final class Configuration {
     }
 
     public static Builder defaults() {
-        return allEnabled();
+        return allEnabled().removeCheck(Check.CONNECTION_MISSING_READ_ONLY);
     }
 
     public FailMethod getFailMethod() {
