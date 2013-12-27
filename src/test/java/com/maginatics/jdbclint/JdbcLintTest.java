@@ -16,6 +16,7 @@
 
 package com.maginatics.jdbclint;
 
+import java.lang.reflect.Proxy;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -83,7 +84,7 @@ public final class JdbcLintTest {
     @Test
     public void testConnectionMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
-        ConnectionProxy proxy = new ConnectionProxy(conn, properties);
+        ConnectionProxy proxy = (ConnectionProxy) Proxy.getInvocationHandler(conn);
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("Connection not closed");
@@ -132,10 +133,9 @@ public final class JdbcLintTest {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO int_table (int_column) VALUES (?)");
-        StatementProxy proxy = new StatementProxy(stmt, properties);
+        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(stmt);
         stmt.setInt(1, 0);
         stmt.executeUpdate();
-        stmt.close();
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("PreparedStatement not closed");
@@ -187,9 +187,8 @@ public final class JdbcLintTest {
         PreparedStatement stmt = conn.prepareStatement(
                 "SELECT * FROM int_table");
         ResultSet rs = stmt.executeQuery();
-        ResultSetProxy proxy = new ResultSetProxy(rs, properties);
+        ResultSetProxy proxy = (ResultSetProxy) Proxy.getInvocationHandler(rs);
         rs.next();
-        rs.close();
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("ResultSet not closed");
@@ -229,9 +228,8 @@ public final class JdbcLintTest {
     public void testStatementMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement();
-        StatementProxy proxy = new StatementProxy(stmt, properties);
+        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(stmt);
         stmt.executeUpdate("INSERT INTO int_table (int_column) VALUES (0)");
-        stmt.close();
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("Statement not closed");
@@ -304,8 +302,7 @@ public final class JdbcLintTest {
         rs.next();
 
         Blob blob = rs.getBlob("blob_column");
-        BlobProxy proxy = new BlobProxy(blob, properties);
-        blob.free();
+        BlobProxy proxy = (BlobProxy) Proxy.getInvocationHandler(blob);
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("Blob not freed");
