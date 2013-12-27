@@ -35,6 +35,7 @@ import org.junit.rules.ExpectedException;
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
     private static final Configuration config = Configuration.defaults()
+            .addCheck(Configuration.Check.CONNECTION_MISSING_READ_ONLY)
             .setFailMethod(Configuration.FailMethod.THROW_SQL_EXCEPTION)
             .build();
     private static final String DATABASE_NAME = "jdbclinttest";
@@ -307,6 +308,18 @@ public final class JdbcLintTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("Blob not freed");
         proxy.finalize();
+    }
+
+    @Test
+    public void testReadOnlyConnection() throws SQLException {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement stmt = conn.prepareStatement("SELECT 1");
+        stmt.executeQuery();
+        stmt.close();
+        thrown.expect(SQLException.class);
+        thrown.expectMessage("Connection did not execute updates, " +
+                "consider calling setReadOnly");
+        conn.close();
     }
 
     private static DataSource getDataSource() {

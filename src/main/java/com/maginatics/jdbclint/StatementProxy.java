@@ -52,24 +52,27 @@ final class StatementProxy implements InvocationHandler {
     private final boolean checkMissingClose;
     private final boolean checkMissingExecute;
     private final boolean checkMissingExecuteBatch;
+    private final ConnectionProxy connectionProxy;
 
-    static Statement newInstance(final Statement stmt,
-            final Configuration config) {
+    static Statement newInstance(final ConnectionProxy connectionProxy,
+            final Statement stmt, final Configuration config) {
         return (Statement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
                 new Class<?>[] {Statement.class},
-                new StatementProxy(stmt, config));
+                new StatementProxy(connectionProxy, stmt, config));
     }
 
-    static PreparedStatement newInstance(final PreparedStatement stmt,
-            final Configuration config) {
+    static PreparedStatement newInstance(final ConnectionProxy connectionProxy,
+            final PreparedStatement stmt, final Configuration config) {
         return (PreparedStatement) Proxy.newProxyInstance(
                 stmt.getClass().getClassLoader(),
                 new Class<?>[] {PreparedStatement.class},
-                new StatementProxy(stmt, config));
+                new StatementProxy(connectionProxy, stmt, config));
     }
 
-    StatementProxy(final Statement stmt, final Configuration config) {
+    StatementProxy(final ConnectionProxy connectionProxy, final Statement stmt,
+            final Configuration config) {
+        this.connectionProxy = Utils.checkNotNull(connectionProxy);
         this.stmt = Utils.checkNotNull(stmt);
         this.config = Utils.checkNotNull(config);
         this.className = "Statement";
@@ -81,7 +84,9 @@ final class StatementProxy implements InvocationHandler {
                 Check.STATEMENT_MISSING_EXECUTE_BATCH);
     }
 
-    StatementProxy(final PreparedStatement stmt, final Configuration config) {
+    StatementProxy(final ConnectionProxy connectionProxy,
+            final PreparedStatement stmt, final Configuration config) {
+        this.connectionProxy = Utils.checkNotNull(connectionProxy);
         this.stmt = Utils.checkNotNull(stmt);
         this.config = Utils.checkNotNull(config);
         this.className = "PreparedStatement";
@@ -127,6 +132,12 @@ final class StatementProxy implements InvocationHandler {
                         className + " addBatch without executeBatch");
             }
             state = State.CLOSED;
+        }
+
+        // Be conservative and mark connection as non-readonly for all execute
+        // calls except executeQuery
+        if (name.startsWith("execute") && !name.equals("executeQuery")) {
+            connectionProxy.setReadOnly(false);
         }
 
         Object returnVal;
