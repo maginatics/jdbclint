@@ -84,7 +84,8 @@ public final class JdbcLintTest {
     @Test
     public void testConnectionMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
-        ConnectionProxy proxy = (ConnectionProxy) Proxy.getInvocationHandler(conn);
+        ConnectionProxy proxy = (ConnectionProxy) Proxy.getInvocationHandler(
+                conn);
 
         thrown.expect(SQLException.class);
         thrown.expectMessage("Connection not closed");
@@ -133,7 +134,8 @@ public final class JdbcLintTest {
         Connection conn = dataSource.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO int_table (int_column) VALUES (?)");
-        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(stmt);
+        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(
+                stmt);
         stmt.setInt(1, 0);
         stmt.executeUpdate();
 
@@ -228,7 +230,8 @@ public final class JdbcLintTest {
     public void testStatementMissingClose() throws SQLException {
         Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement();
-        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(stmt);
+        StatementProxy proxy = (StatementProxy) Proxy.getInvocationHandler(
+                stmt);
         stmt.executeUpdate("INSERT INTO int_table (int_column) VALUES (0)");
 
         thrown.expect(SQLException.class);
