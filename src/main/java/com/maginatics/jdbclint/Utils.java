@@ -29,8 +29,7 @@ final class Utils {
     }
 
     static void fail(final Configuration config, final Exception exception,
-        final String message)
-            throws SQLException {
+            final String message) throws SQLException {
         // log warnings
         String logFile = config.getLogFile();
         PrintStream ps = null;
