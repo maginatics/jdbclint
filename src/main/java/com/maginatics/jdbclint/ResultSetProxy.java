@@ -93,10 +93,7 @@ final class ResultSetProxy implements InvocationHandler {
     public Object invoke(final Object proxy, final Method method,
             final Object[] args) throws Throwable {
         String name = method.getName();
-        if (name.equals("clearWarnings")) {
-            // multiplexing clearWarnings to disable unread column checking
-            unreadColumns.clear();
-        } else if (name.equals("close")) {
+        if (name.equals("close")) {
             if (config.isEnabled(Check.RESULT_SET_DOUBLE_CLOSE) && closed) {
                 Utils.fail(config, exception, "ResultSet already closed");
             }
