@@ -7,30 +7,54 @@ JDBC lint.
 
 Features
 --------
-JDBC lint warns about many different conditions, configured via the following
-properties:
+JDBC lint warns about many different conditions:
 
-* com.maginatics.jdbclint.blob.double\_free
-* com.maginatics.jdbclint.blob.missing\_free
-* com.maginatics.jdbclint.connection.double\_close
-* com.maginatics.jdbclint.connection.missing\_close
-* com.maginatics.jdbclint.connection.missing\_commit\_or\_rollback
-* com.maginatics.jdbclint.connection.missing\_prepare\_statement
-* com.maginatics.jdbclint.preparedstatement.double\_close
-* com.maginatics.jdbclint.preparedstatement.missing\_close
-* com.maginatics.jdbclint.preparedstatement.missing\_execute
-* com.maginatics.jdbclint.preparedstatement.missing\_execute\_batch
-* com.maginatics.jdbclint.resultset.double\_close
-* com.maginatics.jdbclint.resultset.missing\_close
-* com.maginatics.jdbclint.resultset.unread\_column
-* com.maginatics.jdbclint.statement.double\_close
-* com.maginatics.jdbclint.statement.missing\_close
-* com.maginatics.jdbclint.statement.missing\_execute
-* com.maginatics.jdbclint.statement.missing\_execute\_batch
+* BLOB_DOUBLE_FREE
+* BLOB_MISSING_FREE
+* CONNECTION_DOUBLE_CLOSE
+* CONNECTION_MISSING_CLOSE
+* CONNECTION_MISSING_COMMIT_OR_ROLLBACK
+* CONNECTION_MISSING_PREPARE_STATEMENT
+* CONNECTION_MISSING_READ_ONLY
+* PREPARED_STATEMENT_DOUBLE_CLOSE
+* PREPARED_STATEMENT_MISSING_CLOSE
+* PREPARED_STATEMENT_MISSING_EXECUTE
+* PREPARED_STATEMENT_MISSING_EXECUTE_BATCH
+* RESULT_SET_DOUBLE_CLOSE
+* RESULT_SET_MISSING_CLOSE
+* RESULT_SET_UNREAD_COLUMN
+* STATEMENT_DOUBLE_CLOSE
+* STATEMENT_MISSING_CLOSE
+* STATEMENT_MISSING_EXECUTE
+* STATEMENT_MISSING_EXECUTE_BATCH
 
-JDBC lint enables all warnings by default and users can disable individual ones
-by setting the corresponding property to false.
+Examples
+--------
+Users can enable JDBC lint by wrapping Connection or DataSource objects:
 
+```java
+import com.maginatics.jdbclint.Configuration;
+import com.maginatics.jdbclint.ConnectionProxy;
+...
+Configuration config = Configuration.defaults().build()
+Connection connection = DriverManager.getConnection(...);
+connection = ConnectionProxy.newInstance(connection, config);
+connection.close();
+connection.close();  // reports error and optionally throws exception
+```
+
+Users can select from a predefined set of warnings via
+```Configuration.defaults```, ```allEnabled```, and ```allDisabled```,
+and configure individual warnings via ```Configuration.Builder.addCheck```
+and ```removeCheck```.
+
+JDBC lint reports any errors to stderr by default and users can redirect this
+to a file by calling ```Configuration.Builder.setLogFile```.
+Users can also throw a RuntimeException, SQLException, or exit on errors by
+calling ```Configuration.Builder.setFailMethod```.
+
+Installation
+------------
 To make use of JDBC lint in an Apache Maven based project, add it as a
 dependency:
 
@@ -38,29 +62,9 @@ dependency:
 <dependency>
     <groupId>com.maginatics</groupId>
     <artifactId>jdbclint</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
-
-Examples
---------
-Users can enable it by wrapping their Connection or DataSource objects and
-configure it via Java properties.  For example:
-
-```java
-import com.maginatics.jdbclint.ConnectionProxy;
-...
-Connection connection = DriverManager.getConnection(...);
-connection = ConnectionProxy.newInstance(connection, new Properties());
-connection.close();
-connection.close();  // reports error and optionally throws exception
-```
-
-JDBC lint reports any errors to stderr by default and users can redirect this
-to a file by setting com.maginatics.jdbclint.log\_file .  Users can also throw
-a RuntimeException, SQLException, or exit on errors by setting
-com.maginatics.jdbclint.fail\_method to throw\_runtime\_exception,
-throw\_sql\_exception, or exit, respectively.
 
 Background
 ----------
