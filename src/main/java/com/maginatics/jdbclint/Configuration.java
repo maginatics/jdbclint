@@ -16,11 +16,13 @@
 
 package com.maginatics.jdbclint;
 
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
 /**
- * Configuration for JDBC lint.  Most users should call
- * Configuration.defaults() which provides sane defaults.
+ * Configuration for JDBC lint.  Most users should use
+ * Configuration.DEFAULT_CHECKS which provides sane defaults.
  */
 public final class Configuration {
     /** Method to handle failures. */
@@ -56,25 +58,21 @@ public final class Configuration {
         STATEMENT_MISSING_EXECUTE,
         STATEMENT_MISSING_EXECUTE_BATCH;
     }
-    private final EnumSet<Check> checks;
+    private final Set<Check> checks;
 
     private Configuration(final FailMethod failMethod,
-            final String logFile, final EnumSet<Check> checks) {
+            final String logFile, final Set<Check> checks) {
         this.failMethod = Utils.checkNotNull(failMethod);
         this.logFile = logFile;
-        this.checks = Utils.checkNotNull(checks);
+        this.checks = EnumSet.copyOf(Utils.checkNotNull(checks));
     }
 
-    public static Builder allDisabled() {
-        return new Builder(EnumSet.noneOf(Check.class));
-    }
+    public static final Set<Check> DEFAULT_CHECKS =
+            Collections.unmodifiableSet(EnumSet.complementOf(EnumSet.of(
+                    Check.CONNECTION_MISSING_READ_ONLY)));
 
-    public static Builder allEnabled() {
-        return new Builder(EnumSet.allOf(Check.class));
-    }
-
-    public static Builder defaults() {
-        return allEnabled().removeCheck(Check.CONNECTION_MISSING_READ_ONLY);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public FailMethod getFailMethod() {
@@ -93,10 +91,9 @@ public final class Configuration {
     public static final class Builder {
         private FailMethod failMethod = FailMethod.NO_OPERATION;
         private String logFile = null;
-        private final EnumSet<Check> checks;
+        private Set<Check> checks = DEFAULT_CHECKS;
 
-        private Builder(final EnumSet<Check> checks) {
-            this.checks = Utils.checkNotNull(checks);
+        private Builder() {
         }
 
         public Builder setFailMethod(final FailMethod value) {
@@ -109,13 +106,8 @@ public final class Configuration {
             return this;
         }
 
-        public Builder addCheck(final Check check) {
-            checks.add(Utils.checkNotNull(check));
-            return this;
-        }
-
-        public Builder removeCheck(final Check check) {
-            checks.remove(Utils.checkNotNull(check));
+        public Builder setChecks(final Set<Check> value) {
+            this.checks = Utils.checkNotNull(value);
             return this;
         }
 

@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.EnumSet;
 
 import javax.sql.DataSource;
 
@@ -34,9 +35,9 @@ import org.junit.rules.ExpectedException;
 
 /** Test JDBC lint checks. */
 public final class JdbcLintTest {
-    private static final Configuration config = Configuration.defaults()
-            .addCheck(Configuration.Check.CONNECTION_MISSING_READ_ONLY)
+    private static final Configuration config = Configuration.builder()
             .setFailMethod(Configuration.FailMethod.THROW_SQL_EXCEPTION)
+            .setChecks(EnumSet.allOf(Configuration.Check.class))
             .build();
     private static final String DATABASE_NAME = "jdbclinttest";
     private DataSource dataSource;
