@@ -16,10 +16,6 @@
 
 package com.maginatics.jdbclint;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.SQLException;
 
 /** Utility methods. */
@@ -30,37 +26,8 @@ final class Utils {
 
     static void fail(final Configuration config, final Exception exception,
             final String message) throws SQLException {
-        // log warnings
-        String logFile = config.getLogFile();
-        PrintStream ps = null;
-        try {
-            if (logFile == null) {
-                ps = System.err;
-            } else {
-                ps = new PrintStream(new FileOutputStream(new File(logFile),
-                        /*append=*/ true));
-            }
-            ps.println(message);
-            new SQLException(exception).printStackTrace(ps);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        } finally {
-            if (logFile != null && ps != null) {
-                ps.close();
-            }
-        }
-
-        // handle failures
-        switch (config.getFailMethod()) {
-        case EXIT:
-            System.exit(1);
-        case THROW_RUNTIME_EXCEPTION:
-            throw new RuntimeException(message, exception);
-        case THROW_SQL_EXCEPTION:
-            throw new SQLException(message, exception);
-        case NO_OPERATION:
-        default:
-            break;
+        for (Configuration.Action action : config.getActions()) {
+            action.apply(message, exception);
         }
     }
 

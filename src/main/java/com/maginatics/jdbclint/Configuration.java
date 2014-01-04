@@ -16,6 +16,13 @@
 
 package com.maginatics.jdbclint;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -25,18 +32,6 @@ import java.util.Set;
  * Configuration.DEFAULT_CHECKS which provides sane defaults.
  */
 public final class Configuration {
-    /** Method to handle failures. */
-    public enum FailMethod {
-        EXIT,
-        NO_OPERATION,
-        THROW_RUNTIME_EXCEPTION,
-        THROW_SQL_EXCEPTION;
-    }
-    private final FailMethod failMethod;
-
-    /** Location to log warnings to.  If null, log to stderr. */
-    private final String logFile;
-
     /** JDBC lint checks. */
     public enum Check {
         BLOB_DOUBLE_FREE,
@@ -60,59 +55,84 @@ public final class Configuration {
     }
     private final Set<Check> checks;
 
-    private Configuration(final FailMethod failMethod,
-            final String logFile, final Set<Check> checks) {
-        this.failMethod = Utils.checkNotNull(failMethod);
-        this.logFile = logFile;
-        this.checks = EnumSet.copyOf(Utils.checkNotNull(checks));
-    }
-
     public static final Set<Check> DEFAULT_CHECKS =
             Collections.unmodifiableSet(EnumSet.complementOf(EnumSet.of(
                     Check.CONNECTION_MISSING_READ_ONLY)));
 
-    public static Builder builder() {
-        return new Builder();
+    /** Action to take after failing a check. */
+    public interface Action {
+        void apply(String message, Exception exception) throws SQLException;
+    }
+    private final Collection<Action> actions;
+
+    public static final Action PRINT_STACK_TRACE_ACTION = new Action() {
+        @Override
+        public void apply(final String message, final Exception exception) {
+            new SQLException(exception).printStackTrace();
+        }
+    };
+
+    public static final Action SYSTEM_EXIT_ACTION = new Action() {
+        @Override
+        public void apply(final String message, final Exception exception) {
+            System.exit(1);
+        }
+    };
+
+    public static final Action THROW_RUNTIME_EXCEPTION_ACTION = new Action() {
+        @Override
+        public void apply(final String message, final Exception exception) {
+            throw new RuntimeException(message, exception);
+        }
+    };
+
+    public static final Action THROW_SQL_EXCEPTION_ACTION = new Action() {
+        @Override
+        public void apply(final String message, final Exception exception)
+                throws SQLException {
+            throw new SQLException(message, exception);
+        }
+    };
+
+    public static Action printStackTraceToFile(final File file) {
+        Utils.checkNotNull(file);
+        return new Action() {
+            @Override
+            public void apply(final String message, final Exception exception) {
+                PrintStream ps = null;
+                try {
+                    ps = new PrintStream(new FileOutputStream(file),
+                            /*append=*/ true);
+                    ps.println(message);
+                    new SQLException(exception).printStackTrace(ps);
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
+                } finally {
+                    if (ps != null) {
+                        ps.close();
+                    }
+                }
+            }
+        };
     }
 
-    public FailMethod getFailMethod() {
-        return failMethod;
-    }
-
-    public String getLogFile() {
-        return logFile;
+    public Configuration(final Set<Check> checks,
+            final Collection<Action> actions) {
+        this.checks = Collections.unmodifiableSet(EnumSet.copyOf(
+                Utils.checkNotNull(checks)));
+        this.actions = Collections.unmodifiableCollection(
+                new ArrayList<Action>(Utils.checkNotNull(actions)));
     }
 
     public boolean isEnabled(final Check check) {
         return checks.contains(Utils.checkNotNull(check));
     }
 
-    /** Configuration builder for JDBC lint. */
-    public static final class Builder {
-        private FailMethod failMethod = FailMethod.NO_OPERATION;
-        private String logFile = null;
-        private Set<Check> checks = DEFAULT_CHECKS;
+    public Set<Check> getChecks() {
+        return checks;
+    }
 
-        private Builder() {
-        }
-
-        public Builder setFailMethod(final FailMethod value) {
-            this.failMethod = Utils.checkNotNull(value);
-            return this;
-        }
-
-        public Builder setLogFile(final String value) {
-            this.logFile = value;
-            return this;
-        }
-
-        public Builder setChecks(final Set<Check> value) {
-            this.checks = Utils.checkNotNull(value);
-            return this;
-        }
-
-        public Configuration build() {
-            return new Configuration(failMethod, logFile, checks);
-        }
+    public Collection<Action> getActions() {
+        return actions;
     }
 }
