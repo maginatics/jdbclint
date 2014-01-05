@@ -91,6 +91,6 @@ JDBC lint can work in conjunction with all of these tools.
 
 License
 -------
-Copyright (C) 2012-2013 Maginatics, Inc.
+Copyright (C) 2012-2014 Maginatics, Inc.
 
 Licensed under the Apache License, Version 2.0
