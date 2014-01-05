@@ -21,7 +21,7 @@ import java.sql.SQLException;
 /** Utility methods. */
 final class Utils {
     private Utils() {
-        // intentionally unimplemented
+        throw new AssertionError("intentionally unimplemented");
     }
 
     static void fail(final Configuration config, final Exception exception,
