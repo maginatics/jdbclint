@@ -34,24 +34,24 @@ Users can enable JDBC lint by wrapping Connection or DataSource objects:
 
 ```java
 import com.maginatics.jdbclint.Configuration;
+import com.maginatics.jdbclint.Configuration.Check;
 import com.maginatics.jdbclint.ConnectionProxy;
 ...
-Configuration config = Configuration.defaults().build()
+Configuration config = new Configuration(EnumSet.allOf(Check.class),
+        Arrays.<Configuration.Action>asList(
+                    Configuration.PRINT_STACK_TRACE_ACTION,
+                    Configuration.THROW_SQL_EXCEPTION_ACTION));
 Connection connection = DriverManager.getConnection(...);
 connection = ConnectionProxy.newInstance(connection, config);
 connection.close();
-connection.close();  // reports error and optionally throws exception
+connection.close();  // triggers error, runs Actions
 ```
 
-Users can select from a predefined set of warnings via
-```Configuration.defaults```, ```allEnabled```, and ```allDisabled```,
-and configure individual warnings via ```Configuration.Builder.addCheck```
-and ```removeCheck```.
-
-JDBC lint reports any errors to stderr by default and users can redirect this
-to a file by calling ```Configuration.Builder.setLogFile```.
-Users can also throw a RuntimeException, SQLException, or exit on errors by
-calling ```Configuration.Builder.setFailMethod```.
+Users can configure checks providing a different Set<Check> to the
+Configuration constructor.  Users can also configure the actions JDBC lint
+takes when triggering a check by providing a different Collection<Action>.
+Sample actions include printing the stack trace to stderr or a File, throwing
+a SQLException or RuntimeException, or exiting.
 
 Installation
 ------------
@@ -62,7 +62,7 @@ dependency:
 <dependency>
     <groupId>com.maginatics</groupId>
     <artifactId>jdbclint</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
 </dependency>
 ```
 
