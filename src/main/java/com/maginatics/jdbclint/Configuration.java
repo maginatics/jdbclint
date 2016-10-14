@@ -68,7 +68,7 @@ public final class Configuration {
     public static final Action PRINT_STACK_TRACE_ACTION = new Action() {
         @Override
         public void apply(final String message, final Exception exception) {
-            new SQLException(exception).printStackTrace();
+            new SQLException(message, exception).printStackTrace();
         }
     };
 
