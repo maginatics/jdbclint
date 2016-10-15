@@ -56,10 +56,10 @@ final class BlobProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("free")) {
-            if (config.isEnabled(Check.BLOB_DOUBLE_FREE) && freed.get()) {
+            boolean previouslyFreed = !freed.compareAndSet(false, true);
+            if (config.isEnabled(Check.BLOB_DOUBLE_FREE) && previouslyFreed) {
                 Utils.fail(config, exception, "Blob already freed");
             }
-            freed.set(true);
         }
 
         Object returnVal;
