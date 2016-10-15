@@ -81,15 +81,13 @@ public final class ConnectionProxy implements InvocationHandler {
             } else if (config.isEnabled(
                             Check.CONNECTION_MISSING_COMMIT_OR_ROLLBACK) &&
                     !conn.getAutoCommit() &&
-                    state.get() == State.IN_TRANSACTION) {
-                state.set(State.CLOSED);
+                    state.compareAndSet(State.IN_TRANSACTION, State.CLOSED)) {
                 conn.close();
                 Utils.fail(config, exception,
                         "Connection did not commit or roll back");
             } else if (config.isEnabled(
                             Check.CONNECTION_MISSING_PREPARE_STATEMENT) &&
-                    state.get() == State.OPENED) {
-                state.set(State.CLOSED);
+                    state.compareAndSet(State.OPENED, State.CLOSED)) {
                 conn.close();
                 Utils.fail(config, exception,
                         "Connection without prepareStatement");
