@@ -94,7 +94,7 @@ public final class ConnectionProxy implements InvocationHandler {
             }
             state.set(State.CLOSED);
             if (config.isEnabled(Check.CONNECTION_MISSING_READ_ONLY) &&
-                isReadOnly() && !conn.isReadOnly()) {
+                    isReadOnly() && !conn.isReadOnly()) {
                 conn.close();
                 Utils.fail(config, exception,
                     "Connection did not execute updates, " +
