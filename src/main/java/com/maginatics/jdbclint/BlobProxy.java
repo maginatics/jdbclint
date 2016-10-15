@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.maginatics.jdbclint.Configuration.Check;
 
@@ -36,7 +37,7 @@ final class BlobProxy implements InvocationHandler {
     private final Configuration config;
     private final Exception exception = new SQLException();
 
-    private boolean freed = false;
+    private final AtomicBoolean freed = new AtomicBoolean();
 
     static Blob newInstance(final Blob blob, final Configuration config) {
         return (Blob) Proxy.newProxyInstance(
@@ -55,10 +56,10 @@ final class BlobProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("free")) {
-            if (config.isEnabled(Check.BLOB_DOUBLE_FREE) && freed) {
+            if (config.isEnabled(Check.BLOB_DOUBLE_FREE) && freed.get()) {
                 Utils.fail(config, exception, "Blob already freed");
             }
-            freed = true;
+            freed.set(true);
         }
 
         Object returnVal;
@@ -72,7 +73,7 @@ final class BlobProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (config.isEnabled(Check.BLOB_MISSING_FREE) && !freed) {
+        if (config.isEnabled(Check.BLOB_MISSING_FREE) && !freed.get()) {
             Utils.fail(config, exception, "Blob not freed");
         }
     }
