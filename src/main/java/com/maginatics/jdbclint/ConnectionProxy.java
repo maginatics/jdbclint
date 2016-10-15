@@ -25,6 +25,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.maginatics.jdbclint.Configuration.Check;
 
@@ -46,7 +47,8 @@ public final class ConnectionProxy implements InvocationHandler {
         COMMITTED,
         CLOSED;
     }
-    private State state = State.OPENED;
+    private final AtomicReference<State> state =
+            new AtomicReference<State>(State.OPENED);
 
     /**
      * Create a ConnectionProxy.
@@ -74,33 +76,34 @@ public final class ConnectionProxy implements InvocationHandler {
         String name = method.getName();
         if (name.equals("close")) {
             if (config.isEnabled(Check.CONNECTION_DOUBLE_CLOSE) &&
-                    state == State.CLOSED) {
+                    state.get() == State.CLOSED) {
                 Utils.fail(config, exception, "Connection already closed");
             } else if (config.isEnabled(
                             Check.CONNECTION_MISSING_COMMIT_OR_ROLLBACK) &&
-                    !conn.getAutoCommit() && state == State.IN_TRANSACTION) {
-                state = State.CLOSED;
+                    !conn.getAutoCommit() &&
+                    state.compareAndSet(State.IN_TRANSACTION, State.CLOSED)) {
                 conn.close();
                 Utils.fail(config, exception,
                         "Connection did not commit or roll back");
             } else if (config.isEnabled(
                             Check.CONNECTION_MISSING_PREPARE_STATEMENT) &&
-                    state == State.OPENED) {
-                state = State.CLOSED;
+                    state.compareAndSet(State.OPENED, State.CLOSED)) {
                 conn.close();
                 Utils.fail(config, exception,
                         "Connection without prepareStatement");
             }
-            state = State.CLOSED;
+            state.set(State.CLOSED);
             if (config.isEnabled(Check.CONNECTION_MISSING_READ_ONLY) &&
-                isReadOnly() && !conn.isReadOnly()) {
+                    isReadOnly() && !conn.isReadOnly()) {
                 conn.close();
                 Utils.fail(config, exception,
                     "Connection did not execute updates, " +
                     "consider calling setReadOnly");
             }
-        } else if (name.equals("commit") || name.equals("rollback")) {
-            state = State.COMMITTED;
+            return null;
+        }
+        if (name.equals("commit") || name.equals("rollback")) {
+            state.set(State.COMMITTED);
         }
 
         Object returnVal;
@@ -110,11 +113,11 @@ public final class ConnectionProxy implements InvocationHandler {
             throw ite.getTargetException();
         }
         if (name.equals("createStatement")) {
-            state = State.IN_TRANSACTION;
+            state.set(State.IN_TRANSACTION);
             returnVal = StatementProxy.newInstance(this,
                     (Statement) returnVal, config);
         } else if (name.equals("prepareStatement")) {
-            state = State.IN_TRANSACTION;
+            state.set(State.IN_TRANSACTION);
             returnVal = StatementProxy.newInstance(this,
                     (PreparedStatement) returnVal, config);
         }
@@ -124,7 +127,7 @@ public final class ConnectionProxy implements InvocationHandler {
     @Override
     protected void finalize() throws SQLException {
         if (config.isEnabled(Check.CONNECTION_MISSING_CLOSE) &&
-                state != State.CLOSED) {
+                state.get() != State.CLOSED) {
             Utils.fail(config, exception, "Connection not closed");
         }
     }

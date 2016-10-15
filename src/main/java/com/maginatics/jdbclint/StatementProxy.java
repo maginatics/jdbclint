@@ -24,6 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.maginatics.jdbclint.Configuration.Check;
 
@@ -46,7 +47,8 @@ final class StatementProxy implements InvocationHandler {
         EXECUTED,
         CLOSED;
     }
-    private State state = State.OPENED;
+    private final AtomicReference<State> state =
+            new AtomicReference<State>(State.OPENED);
 
     private final boolean checkDoubleClose;
     private final boolean checkMissingClose;
@@ -106,32 +108,32 @@ final class StatementProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("addBatch")) {
-            state = State.IN_ADD_BATCH;
+            state.set(State.IN_ADD_BATCH);
         } else if (name.equals("executeBatch") ||
                 name.equals("executeLargeBatch")) {
-            state = State.EXECUTED;
+            state.set(State.EXECUTED);
         } else if (name.equals("execute") ||
                 name.equals("executeLargeUpdate") ||
                 name.equals("executeQuery") ||
                 name.equals("executeUpdate")) {
-            state = State.EXECUTED;
+            state.set(State.EXECUTED);
         } else if (name.equals("close")) {
-            if (checkDoubleClose && state == State.CLOSED) {
+            if (checkDoubleClose && state.get() == State.CLOSED) {
                 // Closing the same statement twice can cause issues with
                 // server-side statements.
                 Utils.fail(config, exception, className + " already closed");
-            } else if (checkMissingExecute && state == State.OPENED) {
-                state = State.CLOSED;
+            } else if (checkMissingExecute &&
+                    state.compareAndSet(State.OPENED, State.CLOSED)) {
                 stmt.close();
                 Utils.fail(config, exception, className + " without execute");
             } else if (checkMissingExecuteBatch &&
-                    state == State.IN_ADD_BATCH) {
-                state = State.CLOSED;
+                    state.compareAndSet(State.IN_ADD_BATCH, State.CLOSED)) {
                 stmt.close();
                 Utils.fail(config, exception,
                         className + " addBatch without executeBatch");
             }
-            state = State.CLOSED;
+            state.set(State.CLOSED);
+            return null;
         }
 
         // Be conservative and mark connection as non-readonly for all execute
@@ -158,7 +160,7 @@ final class StatementProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (checkMissingClose && state != State.CLOSED) {
+        if (checkMissingClose && state.get() != State.CLOSED) {
             Utils.fail(config, exception, className + " not closed");
         }
     }
