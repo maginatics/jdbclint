@@ -100,7 +100,9 @@ public final class ConnectionProxy implements InvocationHandler {
                     "Connection did not execute updates, " +
                     "consider calling setReadOnly");
             }
-        } else if (name.equals("commit") || name.equals("rollback")) {
+            return null;
+        }
+        if (name.equals("commit") || name.equals("rollback")) {
             state.set(State.COMMITTED);
         }
 

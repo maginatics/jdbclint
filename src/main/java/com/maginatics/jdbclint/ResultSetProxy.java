@@ -104,7 +104,9 @@ final class ResultSetProxy implements InvocationHandler {
                 rs.close();
                 checkUnreadColumns();
             }
-        } else if (name.equals("next")) {
+            return null;
+        }
+        if (name.equals("next")) {
             return next();
         } else if (GETTERS.contains(name)) {
             String columnLabel;

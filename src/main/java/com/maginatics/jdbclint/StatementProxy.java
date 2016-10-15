@@ -133,6 +133,7 @@ final class StatementProxy implements InvocationHandler {
                         className + " addBatch without executeBatch");
             }
             state.set(State.CLOSED);
+            return null;
         }
 
         // Be conservative and mark connection as non-readonly for all execute
