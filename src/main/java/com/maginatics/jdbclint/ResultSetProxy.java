@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.maginatics.jdbclint.Configuration.Check;
 
@@ -73,7 +74,7 @@ final class ResultSetProxy implements InvocationHandler {
     private final Configuration config;
     private final SQLException exception = new SQLException();
 
-    private boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean();
     private final Set<String> unreadColumns = new HashSet<String>();
 
     static ResultSet newInstance(final ResultSet rs,
@@ -94,10 +95,11 @@ final class ResultSetProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("close")) {
-            if (config.isEnabled(Check.RESULT_SET_DOUBLE_CLOSE) && closed) {
+            boolean previouslyClosed = !closed.compareAndSet(false, true);
+            if (config.isEnabled(Check.RESULT_SET_DOUBLE_CLOSE) &&
+                    previouslyClosed) {
                 Utils.fail(config, exception, "ResultSet already closed");
             }
-            closed = true;
             if (!unreadColumns.isEmpty()) {
                 rs.close();
                 checkUnreadColumns();
@@ -126,7 +128,7 @@ final class ResultSetProxy implements InvocationHandler {
 
     @Override
     protected void finalize() throws SQLException {
-        if (config.isEnabled(Check.RESULT_SET_MISSING_CLOSE) && !closed) {
+        if (config.isEnabled(Check.RESULT_SET_MISSING_CLOSE) && !closed.get()) {
             Utils.fail(config, exception, "ResultSet not closed");
         }
     }
