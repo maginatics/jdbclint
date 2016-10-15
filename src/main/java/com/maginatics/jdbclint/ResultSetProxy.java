@@ -95,7 +95,7 @@ final class ResultSetProxy implements InvocationHandler {
             final Object[] args) throws Throwable {
         String name = method.getName();
         if (name.equals("close")) {
-            boolean previouslyClosed = !closed.compareAndSet(false, true);
+            boolean previouslyClosed = closed.getAndSet(true);
             if (config.isEnabled(Check.RESULT_SET_DOUBLE_CLOSE) &&
                     previouslyClosed) {
                 Utils.fail(config, exception, "ResultSet already closed");
