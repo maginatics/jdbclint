@@ -47,7 +47,7 @@
   <scm>
     <connection>scm:git:git@github.com:maginatics/jdbclint.git</connection>
     <developerConnection>scm:git:git@github.com:maginatics/jdbclint.git</developerConnection>
-    <url>git@github.com:maginatics/jdbclint.git</url>
+    <url>https://github.com/maginatics/jdbclint.git</url>
   </scm>
 
   <developers>
