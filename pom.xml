@@ -23,7 +23,7 @@
 
   <groupId>com.maginatics</groupId>
   <artifactId>jdbclint</artifactId>
-  <version>0.6.0</version>
+  <version>0.7.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maginatics JDBC lint</name>
@@ -42,7 +42,7 @@
     <connection>scm:git:git@github.com:maginatics/jdbclint.git</connection>
     <developerConnection>scm:git:git@github.com:maginatics/jdbclint.git</developerConnection>
     <url>https://github.com/maginatics/jdbclint.git</url>
-    <tag>jdbclint-0.6.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <developers>
